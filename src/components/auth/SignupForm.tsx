@@ -52,7 +52,7 @@ const Signup = () => {
             console.log(data);
             if (res.ok) {
                 toast.success("Registration successful! Redirecting to login...");
-                router.push("/auth/login");
+                router.push("/login");
             } else {
                 toast.error(data.message || "Registration failed!");
             }
@@ -147,7 +147,7 @@ const Signup = () => {
                         <div className="text-sm text-center text-muted-foreground">
                             Already have an account?{" "}
                             <Link
-                                href="/auth/login"
+                                href="/login"
                                 className="text-primary hover:underline font-medium"
                             >
                                 Login
