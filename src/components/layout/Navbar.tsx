@@ -8,21 +8,36 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function Navbar() {
+export default function Navbar({
+    onMenuClick,
+}: {
+    onMenuClick?: () => void;
+}) {
     const router = useRouter();
 
     const handleLogout = async () => {
-        // optional: call backend logout
         router.push("/login");
     };
 
     return (
-        <header className="flex h-14 items-center justify-between border-b px-6 bg-background">
-            {/* Breadcrumbs */}
-            <Breadcrumbs />
+        <header className="flex h-14 items-center justify-between border-b px-3 sm:px-6 bg-background">
+
+            {/* Left: Hamburger + Breadcrumbs */}
+            <div className="flex items-center gap-2">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="sm:hidden"
+                    onClick={onMenuClick}
+                >
+                    <Menu className="h-5 w-5" />
+                </Button>
+
+                <Breadcrumbs />
+            </div>
 
             {/* Right actions */}
             <DropdownMenu>
@@ -36,6 +51,7 @@ export default function Navbar() {
                     <DropdownMenuItem onClick={() => router.push("/dashboard/profile")}>
                         Profile
                     </DropdownMenuItem>
+
                     <DropdownMenuItem
                         className="text-red-600"
                         onClick={handleLogout}

@@ -1,7 +1,10 @@
+import SubjectDetailPage from "@/components/subjects/SubjectBYid"
 
 const SubjectBYID = () => {
     return (
-        <div>SubjectBYID</div>
+        <>
+            <SubjectDetailPage />
+        </>
     )
 }
 
