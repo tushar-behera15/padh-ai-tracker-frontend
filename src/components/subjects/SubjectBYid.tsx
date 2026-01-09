@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
 import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import SubjectScorePie from "@/components/charts/SubjectCharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
@@ -11,25 +11,43 @@ interface Chapter {
     name: string;
 }
 
-export async function fetchChapters(subjectId: string) {
-    const res = await fetch(`http://localhost:5000/api/subject/${subjectId}/chapters`, {
-        credentials: "include",
-    });
+type PerformanceLevel = "weak" | "average" | "strong";
+
+/* ---------------- API FUNCTIONS ---------------- */
+
+async function fetchChapters(subjectId: string) {
+    const res = await fetch(
+        `http://localhost:5000/api/subject/${subjectId}/chapters`,
+        { credentials: "include" }
+    );
     if (!res.ok) throw new Error("Failed to fetch chapters");
     return res.json();
 }
 
-export async function fetchSubjectScore(subjectId: string) {
-    const res = await fetch(`http://localhost:5000/api/subject/${subjectId}/scores`, {
-        credentials: "include",
-    });
-    if (!res.ok) throw new Error("Failed to fetch score summary");
+async function fetchSubjectScore(subjectId: string) {
+    const res = await fetch(
+        `http://localhost:5000/api/subject/${subjectId}/scores`,
+        { credentials: "include" }
+    );
+    if (!res.ok) throw new Error("Failed to fetch subject score summary");
     return res.json();
 }
+
+async function fetchChapterScore(subjectId: string, chapterId: string) {
+    const res = await fetch(
+        `http://localhost:5000/api/subject/${subjectId}/chapters/${chapterId}/scores`,
+        { credentials: "include" }
+    );
+    if (!res.ok) throw new Error("Failed to fetch chapter score summary");
+    return res.json();
+}
+
+/* ---------------- PAGE ---------------- */
 
 export default function SubjectDetailPage() {
     const { subjectId } = useParams<{ subjectId: string }>();
 
+    /* 1️⃣ Fetch chapters */
     const {
         data: chaptersData,
         isLoading: chaptersLoading,
@@ -40,6 +58,7 @@ export default function SubjectDetailPage() {
         enabled: !!subjectId,
     });
 
+    /* 2️⃣ Fetch subject score summary */
     const {
         data: scoreData,
         isLoading: scoreLoading,
@@ -50,16 +69,50 @@ export default function SubjectDetailPage() {
         enabled: !!subjectId,
     });
 
-    if (chaptersLoading || scoreLoading) {
+    const chapters: Chapter[] = chaptersData?.chapters ?? [];
+
+    /* 3️⃣ Fetch chapter score for EACH chapter (MANDATORY API) */
+    const chapterScoreQueries = useQueries({
+        queries: chapters.map((chapter) => ({
+            queryKey: ["chapter-score", chapter.id],
+            queryFn: () => fetchChapterScore(subjectId, chapter.id),
+            enabled: !!subjectId,
+        })),
+    });
+
+    const isChapterScoreLoading = chapterScoreQueries.some(
+        (q) => q.isLoading
+    );
+    const isChapterScoreError = chapterScoreQueries.some(
+        (q) => q.isError
+    );
+
+    if (chaptersLoading || scoreLoading || isChapterScoreLoading) {
         return <p className="text-center py-10">Loading subject data...</p>;
     }
 
-    if (chaptersError || scoreError) {
-        return <p className="text-center text-red-500 py-10">Failed to load subject data</p>;
+    if (chaptersError || scoreError || isChapterScoreError) {
+        return (
+            <p className="text-center text-red-500 py-10">
+                Failed to load subject data
+            </p>
+        );
     }
 
-    const chapters: Chapter[] = chaptersData?.chapters ?? [];
+    /* 4️⃣ Build chapterId → performance_level map */
+    const chapterLevelMap: Record<string, PerformanceLevel> = {};
+
+    chapterScoreQueries.forEach((q, index) => {
+        const chapterId = chapters[index]?.id;
+        const level = q.data?.scores?.[0]?.performance_level;
+        if (chapterId && level) {
+            chapterLevelMap[chapterId] = level;
+        }
+    });
+
     const summary = scoreData?.summary;
+
+    /* ---------------- UI ---------------- */
 
     return (
         <div className="space-y-4 px-3 sm:px-6 pb-6">
@@ -72,8 +125,7 @@ export default function SubjectDetailPage() {
                 </CardHeader>
 
                 <CardContent className="grid gap-6 sm:grid-cols-2">
-                    {/* Left */}
-                    <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
+                    <div className="flex flex-col items-center sm:items-start">
                         <p className="text-sm text-muted-foreground mb-1">
                             Overall Performance
                         </p>
@@ -83,39 +135,28 @@ export default function SubjectDetailPage() {
                                 <p className="text-3xl font-bold mb-4">
                                     {summary.average_percentage ?? 0}%
                                 </p>
-
-                                <div className="w-full max-w-55 sm:max-w-65">
-                                    <SubjectScorePie
-                                        percentage={summary.average_percentage ?? 0}
-                                    />
-                                </div>
+                                <SubjectScorePie
+                                    percentage={summary.average_percentage ?? 0}
+                                />
                             </>
                         ) : (
                             <p className="text-muted-foreground">No scores yet</p>
                         )}
                     </div>
 
-                    {/* Right */}
                     <div className="grid grid-cols-3 sm:grid-cols-1 gap-3 text-sm text-center sm:text-left">
                         <div className="rounded-md bg-muted p-3">
                             <p className="text-muted-foreground">Weak</p>
-                            <p className="font-semibold text-lg">
-                                {summary?.weak ?? 0}
+                            <p className="font-semibold text-lg"> {summary?.weak ?? 0}
                             </p>
                         </div>
-
                         <div className="rounded-md bg-muted p-3">
                             <p className="text-muted-foreground">Average</p>
-                            <p className="font-semibold text-lg">
-                                {summary?.average ?? 0}
-                            </p>
+                            <p className="font-semibold text-lg"> {summary?.average ?? 0} </p>
                         </div>
-
                         <div className="rounded-md bg-muted p-3">
                             <p className="text-muted-foreground">Strong</p>
-                            <p className="font-semibold text-lg">
-                                {summary?.strong ?? 0}
-                            </p>
+                            <p className="font-semibold text-lg"> {summary?.strong ?? 0} </p>
                         </div>
                     </div>
                 </CardContent>
@@ -123,10 +164,13 @@ export default function SubjectDetailPage() {
 
             {/* 📘 Chapters List */}
             <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-3 flex justify-between">
                     <CardTitle className="text-lg sm:text-xl">
                         Chapters
                     </CardTitle>
+                    <span className="text-xs text-muted-foreground">
+                        {chapters.length} total
+                    </span>
                 </CardHeader>
 
                 <CardContent>
@@ -135,24 +179,54 @@ export default function SubjectDetailPage() {
                             No chapters added yet.
                         </p>
                     ) : (
-                        <ul className="space-y-2">
-                            {chapters.map((chapter) => (
-                                <li
-                                    key={chapter.id}
-                                    className="flex items-center justify-between gap-3 rounded-lg border p-3 hover:bg-muted transition"
-                                >
-                                    <span className="truncate text-sm sm:text-base">
-                                        {chapter.name}
-                                    </span>
+                        <ul className="space-y-3">
+                            {chapters.map((chapter) => {
+                                const level =
+                                    chapterLevelMap[chapter.id] ?? "weak";
 
-                                    <Link
-                                        href={`/dashboard/subjects/${subjectId}/chapters/${chapter.id}`}
-                                        className="text-primary text-sm font-medium whitespace-nowrap"
-                                    >
-                                        View →
-                                    </Link>
-                                </li>
-                            ))}
+                                const levelStyles = {
+                                    weak: "border-red-200 bg-red-50",
+                                    average: "border-yellow-200 bg-yellow-50",
+                                    strong: "border-green-200 bg-green-50",
+                                };
+
+                                const dotStyles = {
+                                    weak: "bg-red-500",
+                                    average: "bg-yellow-500",
+                                    strong: "bg-green-500",
+                                };
+
+                                return (
+                                    <div key={chapter.id} className="flex">
+
+                                        <Link
+
+                                            href={`/dashboard/subjects/${subjectId}/chapters/${chapter.id}`}
+                                        >
+                                            <li
+
+                                                className={`group flex justify-between rounded-lg border p-4 hover:shadow-sm transition ${levelStyles[level]}`}
+                                            >
+
+                                                <div className="flex items-center gap-3">
+                                                    <span
+                                                        className={`h-2.5 w-2.5 rounded-full ${dotStyles[level]}`}
+                                                    />
+                                                    <div>
+                                                        <p className="font-medium">{chapter.name}</p>
+                                                        <p className="text-xs text-muted-foreground capitalize">
+                                                            {level} performance
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+
+                                            </li>
+                                        </Link>
+                                    </div>
+
+                                );
+                            })}
                         </ul>
                     )}
                 </CardContent>
