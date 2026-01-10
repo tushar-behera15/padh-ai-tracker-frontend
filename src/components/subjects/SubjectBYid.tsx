@@ -11,7 +11,7 @@ interface Chapter {
     name: string;
 }
 
-type PerformanceLevel = "weak" | "average" | "strong";
+type PerformanceLevel = "weak" | "average" | "strong" | "null";
 
 /* ---------------- API FUNCTIONS ---------------- */
 
@@ -88,7 +88,7 @@ export default function SubjectDetailPage() {
     );
 
     if (chaptersLoading || scoreLoading || isChapterScoreLoading) {
-        return <p className="text-center py-10">Loading subject data...</p>;
+        return <p className="text-center py-2">Loading subject data...</p>;
     }
 
     if (chaptersError || scoreError || isChapterScoreError) {
@@ -168,9 +168,9 @@ export default function SubjectDetailPage() {
                     <CardTitle className="text-lg sm:text-xl">
                         Chapters
                     </CardTitle>
-                    <span className="text-xs text-muted-foreground">
-                        {chapters.length} total
-                    </span>
+                    <Link href={`/dashboard/subjects/${subjectId}/chapters/`} className="text-blue-600">
+                        View All <span>→</span>
+                    </Link>
                 </CardHeader>
 
                 <CardContent>
@@ -182,48 +182,54 @@ export default function SubjectDetailPage() {
                         <ul className="space-y-3">
                             {chapters.map((chapter) => {
                                 const level =
-                                    chapterLevelMap[chapter.id] ?? "weak";
+                                    chapterLevelMap[chapter.id] ?? "null";
 
                                 const levelStyles = {
                                     weak: "border-red-200 bg-red-50",
                                     average: "border-yellow-200 bg-yellow-50",
                                     strong: "border-green-200 bg-green-50",
+                                    null: "border-gray-200 bg-gray-100"
                                 };
 
                                 const dotStyles = {
                                     weak: "bg-red-500",
                                     average: "bg-yellow-500",
                                     strong: "bg-green-500",
+                                    null: "bg-gray-500"
                                 };
 
                                 return (
-                                    <div key={chapter.id} className="flex">
-
+                                    <li
+                                        key={chapter.id}
+                                        className={`group rounded-lg border transition hover:shadow-sm ${levelStyles[level]}`}
+                                    >
                                         <Link
-
                                             href={`/dashboard/subjects/${subjectId}/chapters/${chapter.id}`}
+                                            className="flex items-center justify-between gap-3 p-4 focus:outline-none focus:ring-2 focus:ring-primary rounded-lg"
                                         >
-                                            <li
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                {/* Status Dot */}
+                                                <span
+                                                    className={`h-2.5 w-2.5 rounded-full ${dotStyles[level]}`}
+                                                />
 
-                                                className={`group flex justify-between rounded-lg border p-4 hover:shadow-sm transition ${levelStyles[level]}`}
-                                            >
-
-                                                <div className="flex items-center gap-3">
-                                                    <span
-                                                        className={`h-2.5 w-2.5 rounded-full ${dotStyles[level]}`}
-                                                    />
-                                                    <div>
-                                                        <p className="font-medium">{chapter.name}</p>
-                                                        <p className="text-xs text-muted-foreground capitalize">
-                                                            {level} performance
-                                                        </p>
-                                                    </div>
+                                                <div className="min-w-0">
+                                                    <p className="truncate font-medium">
+                                                        {chapter.name}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground capitalize">
+                                                        {level} performance
+                                                    </p>
                                                 </div>
+                                            </div>
 
-
-                                            </li>
+                                            {/* Arrow */}
+                                            <span className="text-sm text-muted-foreground opacity-0 group-hover:opacity-100 transition">
+                                                →
+                                            </span>
                                         </Link>
-                                    </div>
+                                    </li>
+
 
                                 );
                             })}
