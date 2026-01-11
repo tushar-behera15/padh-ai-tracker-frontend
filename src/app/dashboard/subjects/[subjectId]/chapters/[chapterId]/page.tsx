@@ -60,6 +60,9 @@ export default function ChapterAnalyticsPage() {
     const [newScore, setNewScore] = useState("");
     const [deadline, setDeadline] = useState("");
 
+
+    const [isEditing, setIsEditing] = useState(false);
+
     const { data, isLoading } = useQuery<ScoreResponse>({
         queryKey: ["chapter-score", subjectId, chapterId],
         queryFn: () =>
@@ -67,6 +70,21 @@ export default function ChapterAnalyticsPage() {
         staleTime: 1000 * 60 * 5,
     });
 
+    const latestScore = data?.scores?.[0] ?? null;
+
+    const isScoreChanged =
+        newScore !== "" &&
+        Number(newScore) !== latestScore?.score_percentage;
+
+    const isDeadlineChanged =
+        deadline !== "" &&
+        deadline !== latestScore?.deadline?.split("T")[0];
+
+    const hasChanges = isScoreChanged || isDeadlineChanged;
+
+
+
+    /** ADD SCORE */
     const addScoreMutation = useMutation({
         mutationFn: async () => {
             const res = await fetch(
@@ -74,12 +92,10 @@ export default function ChapterAnalyticsPage() {
                 {
                     method: "POST",
                     credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         score_percentage: Number(newScore),
-                        deadline: new Date(deadline).toISOString(),
+                        deadline: new Date(deadline!).toISOString(),
                     }),
                 }
             );
@@ -95,16 +111,50 @@ export default function ChapterAnalyticsPage() {
             setNewScore("");
             setDeadline("");
         },
-        onError: () => {
-            toast.error("Failed to save score. Try again.");
+        onError: () => toast.error("Failed to save score. Try again."),
+    });
+
+    /** UPDATE SCORE */
+    const updateScoreMutation = useMutation({
+        mutationFn: async () => {
+            if (!latestScore) return;
+
+            const payload = {
+                score_percentage: isScoreChanged
+                    ? Number(newScore)
+                    : latestScore.score_percentage,
+                deadline: isDeadlineChanged
+                    ? new Date(deadline!).toISOString()
+                    : latestScore.deadline,
+            };
+
+            const res = await fetch(
+                `http://localhost:5000/api/subject/${subjectId}/chapters/${chapterId}/scores/${latestScore.id}`,
+                {
+                    method: "PUT",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                }
+            );
+
+            if (!res.ok) throw new Error("Failed to update score");
+            return res.json();
+        },
+        onSuccess: () => {
+            toast.success("Score updated successfully ✨");
+            queryClient.invalidateQueries({
+                queryKey: ["chapter-score", subjectId, chapterId],
+            });
+            setIsEditing(false);
         },
     });
+
 
     if (isLoading) {
         return <div className="p-6">Loading analytics...</div>;
     }
 
-    const latestScore = data?.scores?.[0] ?? null;
     const score = latestScore?.score_percentage ?? null;
     const performanceLevel = latestScore?.performance_level ?? "not-evaluated";
 
@@ -151,7 +201,7 @@ export default function ChapterAnalyticsPage() {
 
             {/* STATS */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Card className="rounded-xl bg-linear-to-br from-emerald-500/10 to-green-500/5 transition hover:shadow-lg">
+                <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm text-muted-foreground">
                             Score
@@ -162,22 +212,20 @@ export default function ChapterAnalyticsPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="rounded-xl transition hover:shadow-lg">
+                <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm text-muted-foreground">
                             Performance
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <Badge
-                            className={`${performanceColor} px-4 py-1 rounded-full text-white capitalize shadow`}
-                        >
+                        <Badge className={`${performanceColor} text-white capitalize`}>
                             {performanceLevel}
                         </Badge>
                     </CardContent>
                 </Card>
 
-                <Card className="rounded-xl transition hover:shadow-lg">
+                <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm text-muted-foreground">
                             Days Left
@@ -188,7 +236,7 @@ export default function ChapterAnalyticsPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="rounded-xl transition hover:shadow-lg">
+                <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm text-muted-foreground">
                             Insight
@@ -206,20 +254,20 @@ export default function ChapterAnalyticsPage() {
                 </Card>
             </div>
 
-            {/* ADD SCORE */}
-            {score === null && (
-                <Card className="rounded-2xl border-dashed border-2 bg-muted/40">
+            {/* ADD / UPDATE */}
+            {(score === null || isEditing) && (
+                <Card>
                     <CardHeader>
-                        <CardTitle>Add Score & Deadline</CardTitle>
+                        <CardTitle>
+                            {score === null ? "Add Score & Deadline" : "Update Score & Deadline"}
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div>
                             <Label>Score Percentage</Label>
                             <Input
                                 type="number"
-                                min={0}
-                                max={100}
-                                value={newScore}
+                                value={newScore ?? ""}
                                 onChange={(e) => setNewScore(e.target.value)}
                             />
                         </div>
@@ -228,37 +276,49 @@ export default function ChapterAnalyticsPage() {
                             <Label>Target Completion Date</Label>
                             <Input
                                 type="date"
-                                min={new Date().toISOString().split("T")[0]}
-                                value={deadline}
+                                value={deadline ?? ""}
                                 onChange={(e) => setDeadline(e.target.value)}
                             />
                         </div>
 
                         <Button
-                            className="w-full transition hover:scale-[1.02]"
+                            className="w-full"
                             disabled={
-                                !newScore ||
-                                !deadline ||
-                                addScoreMutation.isPending
+                                addScoreMutation.isPending ||
+                                updateScoreMutation.isPending ||
+                                (score !== null && !hasChanges)
                             }
-                            onClick={() => addScoreMutation.mutate()}
+                            onClick={() =>
+                                score === null
+                                    ? addScoreMutation.mutate()
+                                    : updateScoreMutation.mutate()
+                            }
                         >
-                            {addScoreMutation.isPending
-                                ? "Saving..."
-                                : "Save Score & Deadline"}
+                            {updateScoreMutation.isPending
+                                ? "Updating..."
+                                : score === null
+                                    ? "Save"
+                                    : "Update"}
                         </Button>
+
                     </CardContent>
                 </Card>
             )}
 
+            {score !== null && !isEditing && (
+                <Button variant="outline" onClick={() => setIsEditing(true)}>
+                    Edit Score & Deadline
+                </Button>
+            )}
+
             {/* ANALYTICS */}
             <div className="grid gap-6 lg:grid-cols-2">
-                <Card className="rounded-2xl">
+                <Card>
                     <CardHeader>
                         <CardTitle>Performance Meter</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                        <Progress value={score ?? 0} className="h-3" />
+                    <CardContent>
+                        <Progress value={score ?? 0} />
                         <div className="flex justify-between text-xs text-muted-foreground">
                             <span>Weak</span>
                             <span>Average</span>
@@ -274,28 +334,13 @@ export default function ChapterAnalyticsPage() {
                     <CardContent className="h-65 relative">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
-                                <Pie
-                                    data={pieData}
-                                    dataKey="value"
-                                    innerRadius={70}
-                                    outerRadius={100}
-                                >
-                                    {pieData.map((_, index) => (
-                                        <Cell
-                                            key={index}
-                                            fill={COLORS[index % COLORS.length]}
-                                        />
-                                    ))}
-                                </Pie>
+                                <Pie data={pieData} dataKey="value" innerRadius={70} outerRadius={100} > {pieData.map((_, index) => (<Cell key={index} fill={COLORS[index % COLORS.length]} />))} </Pie>
                                 <Tooltip />
                             </PieChart>
                         </ResponsiveContainer>
-
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                             <span className="text-3xl font-bold">{daysLeft}</span>
-                            <span className="text-xs text-muted-foreground">
-                                days left
-                            </span>
+                            <span className="text-xs text-muted-foreground"> days left </span>
                         </div>
                     </CardContent>
                 </Card>
