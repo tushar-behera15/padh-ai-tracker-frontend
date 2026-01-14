@@ -80,7 +80,6 @@ export default function ChaptersPage() {
     const [open, setOpen] = useState(false);
     const [chapterName, setChapterName] = useState("");
 
-    /* 1️⃣ Fetch chapters */
     const { data, isLoading } = useQuery({
         queryKey: ["chapters", subjectId],
         queryFn: () => fetchChapters(subjectId),
@@ -116,34 +115,46 @@ export default function ChaptersPage() {
     });
 
     if (isLoading) {
-        return <p className="text-center py-2 text-muted-foreground">Loading chapters...</p>;
+        return (
+            <div className="flex h-[60vh] items-center justify-center">
+                <p className="text-sm text-muted-foreground animate-pulse">
+                    Loading chapters…
+                </p>
+            </div>
+        );
     }
 
     return (
-        <div className="gap-4 px-4 pb-6">
+        <div className="mx-auto max-w-5xl space-y-6 px-4 pb-8">
             {/* Header */}
             <div className="flex items-center justify-between p-3">
-                <h2 className="text-xl font-semibold">Chapters</h2>
+                <h2 className="text-xl font-semibold tracking-tight">
+                    Chapters
+                </h2>
+
                 <Button size="sm" onClick={() => setOpen(true)}>
                     <Plus className="mr-1 h-4 w-4" />
-                    Add Chapter
+                    Add chapter
                 </Button>
             </div>
 
-            {/* Chapters List */}
-            <Card className="shadow-[0_-1px_5px_rgba(0,0,0,0.1)] mt-2">
+            {/* Timeline List */}
+            <Card>
+                <CardContent className="relative space-y-4 py-6">
+                    {/* Vertical rail */}
+                    <div className="absolute left-6 top-6 bottom-6 w-px bg-border" />
 
-                <CardContent className="overflow-y-auto">
                     {chapters.length === 0 ? (
-                        <p className="py-2 text-center text-sm text-muted-foreground">
+                        <p className="text-center text-sm text-muted-foreground">
                             No chapters added yet
                         </p>
                     ) : (
-                        <ul className="space-y-3">
+                        <ul className="space-y-5">
                             {chapters.map((chapter, index) => {
                                 const score = chapterScoreMap[chapter.id];
                                 const scoreQuery = chapterScoreQueries[index];
-                                const isScoreLoading = scoreQuery?.isLoading ?? false;
+                                const isScoreLoading =
+                                    scoreQuery?.isLoading ?? false;
 
                                 const level = score
                                     ? score.performance_level
@@ -151,28 +162,12 @@ export default function ChaptersPage() {
                                         ? "loading"
                                         : "none";
 
-                                const styles = {
-                                    weak: {
-                                        badge: "bg-red-100 text-red-700",
-                                        bar: "bg-red-500",
-                                    },
-                                    average: {
-                                        badge: "bg-yellow-100 text-yellow-700",
-                                        bar: "bg-yellow-500",
-                                    },
-                                    strong: {
-                                        badge: "bg-green-100 text-green-700",
-                                        bar: "bg-green-500",
-                                    },
-                                    none: {
-                                        badge: "bg-gray-100 text-gray-600",
-                                        bar: "bg-gray-300",
-                                    },
-                                    loading: {
-                                        badge:
-                                            "bg-muted text-muted-foreground animate-pulse",
-                                        bar: "bg-muted",
-                                    },
+                                const accent = {
+                                    weak: "bg-destructive",
+                                    average: "bg-yellow-500",
+                                    strong: "bg-emerald-500",
+                                    none: "bg-muted-foreground",
+                                    loading: "bg-muted",
                                 }[level];
 
                                 return (
@@ -183,58 +178,68 @@ export default function ChaptersPage() {
                                                 `/dashboard/subjects/${subjectId}/chapters/${chapter.id}`
                                             )
                                         }
-                                        className="group rounded-xl border bg-background p-4 cursor-pointer transition hover:border-primary/40 hover:shadow-md active:scale-[0.98]"
+                                        className="
+                                            group relative ml-8 cursor-pointer
+                                            rounded-xl border border-border/50
+                                            bg-card p-4
+                                            transition-all duration-300
+                                            hover:-translate-y-0.5 hover:shadow-lg
+                                            active:scale-[0.99]
+                                        "
                                     >
-                                        {/* Header */}
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <p className="truncate text-sm font-semibold">
-                                                    {chapter.name}
-                                                </p>
+                                        {/* Timeline dot */}
+                                        <span
+                                            className={`
+                                                absolute -left-6.5 top-5 h-3 w-3
+                                                rounded-full ${accent}
+                                            `}
+                                        />
 
-                                                <p className="mt-0.5 text-xs text-muted-foreground">
-                                                    {score
-                                                        ? `Deadline · ${new Date(
-                                                            score.deadline
-                                                        ).toLocaleDateString()}`
-                                                        : "No score added yet"}
-                                                </p>
+                                        <div className="space-y-2">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <p className="truncate font-medium">
+                                                        {chapter.name}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {score
+                                                            ? `Deadline · ${new Date(
+                                                                score.deadline
+                                                            ).toLocaleDateString()}`
+                                                            : "No score added yet"}
+                                                    </p>
+                                                </div>
+
+                                                <span className="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">
+                                                    {isScoreLoading
+                                                        ? "Loading…"
+                                                        : level}
+                                                </span>
                                             </div>
 
-                                            <span
-                                                className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${styles.badge}`}
-                                            >
-                                                {isScoreLoading ? "Loading…" : level}
-                                            </span>
-                                        </div>
-
-                                        {/* Progress */}
-                                        {score || isScoreLoading ? (
-                                            <div className="mt-3">
-                                                {isScoreLoading ? (
-                                                    <div className="space-y-2">
-                                                        <div className="h-2 w-20 rounded bg-muted animate-pulse" />
-                                                        <div className="h-2 w-full rounded-full bg-muted animate-pulse" />
+                                            {/* Progress rail */}
+                                            {score && (
+                                                <div className="pt-2">
+                                                    <div className="mb-1 flex justify-between text-xs">
+                                                        <span className="text-muted-foreground">
+                                                            Progress
+                                                        </span>
+                                                        <span className="font-medium">
+                                                            {score.score_percentage}%
+                                                        </span>
                                                     </div>
-                                                ) : (
-                                                    <>
-                                                        <div className="mb-1 flex items-center justify-between text-xs">
-                                                            <span className="text-muted-foreground">Progress</span>
-                                                            <span className="font-medium">
-                                                                {score?.score_percentage}%
-                                                            </span>
-                                                        </div>
 
-                                                        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                                                            <div
-                                                                className={`h-full transition-all duration-300 ${styles.bar}`}
-                                                                style={{ width: `${score?.score_percentage}%` }}
-                                                            />
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
-                                        ) : null}
+                                                    <div className="h-1.5 w-full rounded-full bg-muted">
+                                                        <div
+                                                            className={`h-full rounded-full ${accent}`}
+                                                            style={{
+                                                                width: `${score.score_percentage}%`,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </li>
                                 );
                             })}
@@ -242,7 +247,6 @@ export default function ChaptersPage() {
                     )}
                 </CardContent>
             </Card>
-
 
             {/* Create Chapter Dialog */}
             <Dialog
@@ -252,9 +256,9 @@ export default function ChaptersPage() {
                     if (!val) setChapterName("");
                 }}
             >
-                <DialogContent>
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Create Chapter</DialogTitle>
+                        <DialogTitle>Create chapter</DialogTitle>
                     </DialogHeader>
 
                     <form
@@ -263,7 +267,7 @@ export default function ChaptersPage() {
                             if (!chapterName.trim()) return;
                             createMutation.mutate();
                         }}
-                        className="space-y-4"
+                        className="space-y-4 pt-2"
                     >
                         <div className="space-y-2">
                             <Label htmlFor="chapter">Chapter name</Label>
@@ -287,8 +291,8 @@ export default function ChaptersPage() {
                                 }
                             >
                                 {createMutation.isPending
-                                    ? "Creating..."
-                                    : "Create"}
+                                    ? "Creating…"
+                                    : "Create chapter"}
                             </Button>
                         </DialogFooter>
                     </form>

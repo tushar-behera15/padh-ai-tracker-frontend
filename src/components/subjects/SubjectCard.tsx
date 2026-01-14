@@ -28,41 +28,70 @@ export default function SubjectCard({
     const progress = scoreSummary?.average_percentage ?? 0;
 
     return (
-        <Link href={`/dashboard/subjects/${id}`}>
-            <Card className="hover:shadow-md transition cursor-pointer">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <BookOpen className="h-5 w-5 text-primary" />
-                        {name}
+        <Link href={`/dashboard/subjects/${id}`} className="group">
+            <Card
+                className="
+                    relative h-full cursor-pointer overflow-hidden
+                    border border-border/50
+                    transition-all duration-300
+                    hover:-translate-y-1 hover:shadow-lg
+                    focus-visible:ring-2 focus-visible:ring-primary
+                "
+            >
+                {/* Hover glow */}
+                <div
+                    className="
+                        pointer-events-none absolute inset-0
+                        opacity-0 transition-opacity duration-300
+                        group-hover:opacity-100
+                        bg-linear-to-br from-primary/5 via-transparent to-primary/10
+                    "
+                />
+
+                <CardHeader className="relative space-y-1 pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                        <span
+                            className="
+                                flex h-8 w-8 items-center justify-center rounded-md
+                                bg-primary/10 text-primary
+                            "
+                        >
+                            <BookOpen className="h-4 w-4" />
+                        </span>
+                        <span className="truncate">{name}</span>
                     </CardTitle>
                 </CardHeader>
 
-                <CardContent className="space-y-4">
+                <CardContent className="relative space-y-5">
                     {/* Average Score */}
-                    <div>
-                        <div className="flex justify-between text-sm mb-1">
-                            <span className="text-muted-foreground">Average Score</span>
-                            <span className="font-medium">{progress}%</span>
+                    <div className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">
+                                Average score
+                            </span>
+                            <span className="font-medium tabular-nums">
+                                {progress}%
+                            </span>
                         </div>
-                        <Progress value={progress} />
+                        <Progress value={progress} className="h-2" />
                     </div>
 
                     {/* Strength Breakdown */}
-                    <div className="grid grid-cols-3 text-center text-xs">
+                    <div className="grid grid-cols-3 gap-2 rounded-lg bg-muted/40 py-2 text-center">
                         <Stat label="Weak" value={scoreSummary.weak} />
                         <Stat label="Average" value={scoreSummary.average} />
                         <Stat label="Strong" value={scoreSummary.strong} />
                     </div>
 
                     {/* Footer stats */}
-                    <div className="flex justify-between text-sm text-muted-foreground pt-2">
-                        <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-between border-t pt-3 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
                             <Layers className="h-4 w-4" />
-                            {chapterCount} Chapters
+                            <span>{chapterCount} chapters</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
                             <Clock className="h-4 w-4" />
-                            {pendingRevisions} Revisions
+                            <span>{pendingRevisions} revisions</span>
                         </div>
                     </div>
                 </CardContent>
@@ -73,9 +102,13 @@ export default function SubjectCard({
 
 function Stat({ label, value }: { label: string; value: number }) {
     return (
-        <div>
-            <p className="font-semibold">{value}</p>
-            <p className="text-muted-foreground">{label}</p>
+        <div className="space-y-0.5">
+            <p className="text-sm font-semibold tabular-nums">
+                {value}
+            </p>
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                {label}
+            </p>
         </div>
     );
 }

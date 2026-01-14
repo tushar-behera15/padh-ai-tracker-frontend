@@ -78,44 +78,63 @@ export default function SubjectsPage() {
                 })
             );
         },
-        staleTime: 1000 * 60 * 5, // ✅ cache for 5 minutes
+        staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false,
     });
 
+    /* -------------------- STATES -------------------- */
+
     if (isLoading) {
         return (
-            <p className="text-muted-foreground text-center">
-                Loading subjects...
-            </p>
+            <div className="flex h-[60vh] items-center justify-center">
+                <p className="text-sm text-muted-foreground animate-pulse">
+                    Loading your subjects…
+                </p>
+            </div>
         );
     }
 
     if (isError) {
         return (
-            <p className="text-red-500 text-center">
-                Failed to load subjects
-            </p>
+            <div className="flex h-[60vh] items-center justify-center">
+                <p className="text-sm font-medium text-red-500 dark:text-red-400">
+                    Failed to load subjects
+                </p>
+            </div>
         );
     }
 
-    return (
-        <div className="space-y-6 p-3">
-            <h1 className="text-2xl font-bold">Subjects</h1>
+    /* -------------------- UI -------------------- */
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    return (
+        <div className="mx-auto max-w-7xl space-y-8 px-4 py-6">
+            {/* Header */}
+            <div className="space-y-1">
+                <h1 className="text-2xl font-semibold tracking-tight">
+                    Subjects
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                    Track chapters, revisions, and performance at a glance
+                </p>
+            </div>
+
+            {/* Grid */}
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {subjects.map((subject) => (
                     <SubjectCard key={subject.id} {...subject} />
                 ))}
 
-                <AddSubjectDialog
-                    onSuccess={(newSubject) => {
-                        // ✅ Optimistic cache update
-                        queryClient.setQueryData<Subject[]>(["subjects"], (old = []) => [
-                            newSubject,
-                            ...old,
-                        ]);
-                    }}
-                />
+                {/* Add Subject Card */}
+                <div className="flex">
+                    <AddSubjectDialog
+                        onSuccess={(newSubject) => {
+                            queryClient.setQueryData<Subject[]>(
+                                ["subjects"],
+                                (old = []) => [newSubject, ...old]
+                            );
+                        }}
+                    />
+                </div>
             </div>
         </div>
     );

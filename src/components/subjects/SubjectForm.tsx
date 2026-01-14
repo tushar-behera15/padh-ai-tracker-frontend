@@ -50,7 +50,6 @@ export default function AddSubjectDialog({ onSuccess }: AddSubjectDialogProps) {
 
             const data = await res.json();
 
-            // ✅ Optimistic subject object
             const newSubject: Subject = {
                 ...data.subject,
                 chapterCount: 0,
@@ -84,27 +83,58 @@ export default function AddSubjectDialog({ onSuccess }: AddSubjectDialogProps) {
             }}
         >
             <DialogTrigger asChild>
-                <button className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-6 text-muted-foreground hover:border-primary hover:text-primary transition">
-                    <Plus className="h-6 w-6" />
-                    <span>Add Subject</span>
+                <button
+                    className="
+                        group relative flex h-full min-h-55 w-full
+                        flex-col items-center justify-center gap-2
+                        rounded-xl border border-dashed border-border/60
+                        bg-card text-muted-foreground
+                        transition-all duration-300
+                        hover:-translate-y-1 hover:border-primary hover:text-primary
+                        hover:shadow-lg
+                    "
+                >
+                    {/* Hover glow */}
+                    <div
+                        className="
+                            pointer-events-none absolute inset-0
+                            rounded-xl opacity-0 transition-opacity
+                            group-hover:opacity-100
+                            bg-linear-to-br from-primary/5 via-transparent to-primary/10
+                        "
+                    />
+
+                    <Plus className="h-7 w-7" />
+                    <span className="text-sm font-medium">
+                        Add Subject
+                    </span>
                 </button>
             </DialogTrigger>
 
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Create Subject</DialogTitle>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader className="space-y-1">
+                    <DialogTitle className="text-lg">
+                        Create subject
+                    </DialogTitle>
+                    <p className="text-sm text-muted-foreground">
+                        Add a new subject to start tracking chapters and scores
+                    </p>
                 </DialogHeader>
 
-                <form onSubmit={handleCreate} className="space-y-4">
+                <form onSubmit={handleCreate} className="space-y-4 pt-4">
                     <Input
-                        placeholder="Subject name (e.g. Maths)"
+                        placeholder="Subject name (e.g. Mathematics)"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         autoFocus
                     />
 
-                    <Button type="submit" disabled={loading} className="w-full">
-                        {loading ? "Creating..." : "Create"}
+                    <Button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full"
+                    >
+                        {loading ? "Creating..." : "Create subject"}
                     </Button>
                 </form>
             </DialogContent>

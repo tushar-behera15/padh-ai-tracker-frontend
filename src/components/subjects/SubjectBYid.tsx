@@ -47,7 +47,6 @@ async function fetchChapterScore(subjectId: string, chapterId: string) {
 export default function SubjectDetailPage() {
     const { subjectId } = useParams<{ subjectId: string }>();
 
-    /* 1️⃣ Fetch chapters */
     const {
         data: chaptersData,
         isLoading: chaptersLoading,
@@ -58,7 +57,6 @@ export default function SubjectDetailPage() {
         enabled: !!subjectId,
     });
 
-    /* 2️⃣ Fetch subject score summary */
     const {
         data: scoreData,
         isLoading: scoreLoading,
@@ -71,7 +69,6 @@ export default function SubjectDetailPage() {
 
     const chapters: Chapter[] = chaptersData?.chapters ?? [];
 
-    /* 3️⃣ Fetch chapter score for EACH chapter (MANDATORY API) */
     const chapterScoreQueries = useQueries({
         queries: chapters.map((chapter) => ({
             queryKey: ["chapter-score", chapter.id],
@@ -80,26 +77,27 @@ export default function SubjectDetailPage() {
         })),
     });
 
-    const isChapterScoreLoading = chapterScoreQueries.some(
-        (q) => q.isLoading
-    );
-    const isChapterScoreError = chapterScoreQueries.some(
-        (q) => q.isError
-    );
+    const isChapterScoreLoading = chapterScoreQueries.some((q) => q.isLoading);
+    const isChapterScoreError = chapterScoreQueries.some((q) => q.isError);
 
     if (chaptersLoading || scoreLoading || isChapterScoreLoading) {
-        return <p className="text-center py-2">Loading subject data...</p>;
+        return (
+            <div className="flex h-[60vh] items-center justify-center">
+                <p className="text-sm text-muted-foreground animate-pulse">
+                    Loading subject data…
+                </p>
+            </div>
+        );
     }
 
     if (chaptersError || scoreError || isChapterScoreError) {
         return (
-            <p className="text-center text-red-500 py-10">
+            <p className="text-center text-sm text-destructive py-10">
                 Failed to load subject data
             </p>
         );
     }
 
-    /* 4️⃣ Build chapterId → performance_level map */
     const chapterLevelMap: Record<string, PerformanceLevel> = {};
 
     chapterScoreQueries.forEach((q, index) => {
@@ -115,24 +113,24 @@ export default function SubjectDetailPage() {
     /* ---------------- UI ---------------- */
 
     return (
-        <div className="space-y-4 px-3 sm:px-6 pb-6">
+        <div className="mx-auto max-w-7xl space-y-6 px-4 pb-8">
             {/* 📊 Subject Analytics */}
-            <Card className="mt-2">
+            <Card>
                 <CardHeader className="pb-3">
                     <CardTitle className="text-lg sm:text-xl">
-                        Subject Analytics
+                        Subject analytics
                     </CardTitle>
                 </CardHeader>
 
                 <CardContent className="grid gap-6 sm:grid-cols-2">
                     <div className="flex flex-col items-center sm:items-start">
-                        <p className="text-sm text-muted-foreground mb-1">
-                            Overall Performance
+                        <p className="mb-1 text-sm text-muted-foreground">
+                            Overall performance
                         </p>
 
                         {summary ? (
                             <>
-                                <p className="text-3xl font-bold mb-4">
+                                <p className="mb-4 text-3xl font-bold tabular-nums">
                                     {summary.average_percentage ?? 0}%
                                 </p>
                                 <SubjectScorePie
@@ -140,97 +138,101 @@ export default function SubjectDetailPage() {
                                 />
                             </>
                         ) : (
-                            <p className="text-muted-foreground">No scores yet</p>
+                            <p className="text-muted-foreground">
+                                No scores yet
+                            </p>
                         )}
                     </div>
 
-                    <div className="grid grid-cols-3 sm:grid-cols-1 gap-3 text-sm text-center sm:text-left">
-                        <div className="rounded-md bg-muted p-3">
-                            <p className="text-muted-foreground">Weak</p>
-                            <p className="font-semibold text-lg"> {summary?.weak ?? 0}
-                            </p>
-                        </div>
-                        <div className="rounded-md bg-muted p-3">
-                            <p className="text-muted-foreground">Average</p>
-                            <p className="font-semibold text-lg"> {summary?.average ?? 0} </p>
-                        </div>
-                        <div className="rounded-md bg-muted p-3">
-                            <p className="text-muted-foreground">Strong</p>
-                            <p className="font-semibold text-lg"> {summary?.strong ?? 0} </p>
-                        </div>
+                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-1">
+                        {[
+                            { label: "Weak", value: summary?.weak ?? 0 },
+                            { label: "Average", value: summary?.average ?? 0 },
+                            { label: "Strong", value: summary?.strong ?? 0 },
+                        ].map((item) => (
+                            <div
+                                key={item.label}
+                                className="rounded-lg bg-muted/50 p-3 text-center sm:text-left"
+                            >
+                                <p className="text-xs text-muted-foreground">
+                                    {item.label}
+                                </p>
+                                <p className="text-lg font-semibold tabular-nums">
+                                    {item.value}
+                                </p>
+                            </div>
+                        ))}
                     </div>
                 </CardContent>
             </Card>
 
-            {/* 📘 Chapters List */}
+            {/* 📘 Chapters */}
             <Card>
-                <CardHeader className="pb-3 flex justify-between">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
                     <CardTitle className="text-lg sm:text-xl">
                         Chapters
                     </CardTitle>
-                    <Link href={`/dashboard/subjects/${subjectId}/chapters/`} className="text-blue-600">
-                        View All <span>→</span>
+
+                    <Link
+                        href={`/dashboard/subjects/${subjectId}/chapters/`}
+                        className="text-sm text-primary hover:underline"
+                    >
+                        View all →
                     </Link>
                 </CardHeader>
 
                 <CardContent>
                     {chapters.length === 0 ? (
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-sm text-muted-foreground">
                             No chapters added yet.
                         </p>
                     ) : (
-                        <ul className="space-y-3">
+                        <ul className="space-y-2">
                             {chapters.map((chapter) => {
                                 const level =
                                     chapterLevelMap[chapter.id] ?? "null";
 
-                                const levelStyles = {
-                                    weak: "border-red-200 bg-red-50",
-                                    average: "border-yellow-200 bg-yellow-50",
-                                    strong: "border-green-200 bg-green-50",
-                                    null: "border-gray-200 bg-gray-100"
-                                };
-
-                                const dotStyles = {
-                                    weak: "bg-red-500",
-                                    average: "bg-yellow-500",
-                                    strong: "bg-green-500",
-                                    null: "bg-gray-500"
+                                const levelBadge = {
+                                    weak: "bg-destructive/10 text-destructive",
+                                    average:
+                                        "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400",
+                                    strong:
+                                        "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                                    null: "bg-muted text-muted-foreground",
                                 };
 
                                 return (
-                                    <li
-                                        key={chapter.id}
-                                        className={`group rounded-lg border transition hover:shadow-sm ${levelStyles[level]}`}
-                                    >
+                                    <li key={chapter.id}>
                                         <Link
                                             href={`/dashboard/subjects/${subjectId}/chapters/${chapter.id}`}
-                                            className="flex items-center justify-between gap-3 p-4 focus:outline-none focus:ring-2 focus:ring-primary rounded-lg"
+                                            className="
+                                                group flex items-center justify-between
+                                                rounded-lg border border-border/50
+                                                p-4 transition
+                                                hover:bg-muted/40 hover:shadow-sm
+                                                focus:outline-none focus:ring-2 focus:ring-primary
+                                            "
                                         >
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                {/* Status Dot */}
+                                            <div className="min-w-0">
+                                                <p className="truncate font-medium">
+                                                    {chapter.name}
+                                                </p>
                                                 <span
-                                                    className={`h-2.5 w-2.5 rounded-full ${dotStyles[level]}`}
-                                                />
-
-                                                <div className="min-w-0">
-                                                    <p className="truncate font-medium">
-                                                        {chapter.name}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground capitalize">
-                                                        {level} performance
-                                                    </p>
-                                                </div>
+                                                    className={`
+                                                        mt-1 inline-block rounded-full px-2 py-0.5
+                                                        text-[11px] capitalize
+                                                        ${levelBadge[level]}
+                                                    `}
+                                                >
+                                                    {level} performance
+                                                </span>
                                             </div>
 
-                                            {/* Arrow */}
-                                            <span className="text-sm text-muted-foreground opacity-0 group-hover:opacity-100 transition">
+                                            <span className="text-muted-foreground opacity-0 transition group-hover:opacity-100">
                                                 →
                                             </span>
                                         </Link>
                                     </li>
-
-
                                 );
                             })}
                         </ul>

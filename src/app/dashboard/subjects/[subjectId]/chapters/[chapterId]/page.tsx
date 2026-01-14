@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+// import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -175,12 +175,13 @@ export default function ChapterAnalyticsPage() {
 
     const performanceColor =
         performanceLevel === "strong"
-            ? "bg-green-500"
+            ? "bg-green-500/15 text-green-600 dark:text-green-400"
             : performanceLevel === "average"
-                ? "bg-yellow-500"
+                ? "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400"
                 : performanceLevel === "weak"
-                    ? "bg-red-500"
-                    : "bg-gray-400";
+                    ? "bg-red-500/15 text-red-600 dark:text-red-400"
+                    : "bg-muted text-muted-foreground";
+
 
     const pieData = [
         { name: "Days Left", value: daysLeft },
@@ -188,46 +189,53 @@ export default function ChapterAnalyticsPage() {
     ];
 
     return (
-        <div className="mx-auto max-w-7xl p-6 space-y-8">
+        <div className="mx-auto max-w-7xl px-6 py-8 space-y-10 bg-background text-foreground">
             {/* HERO */}
-            <div className="rounded-2xl border bg-linear-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 p-6">
-                <h1 className="text-3xl font-bold tracking-tight">
-                    {latestScore?.chapter_name ?? "Chapter Analytics"}
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                    Performance, deadlines & improvement insights
-                </p>
+            <div className="relative overflow-hidden rounded-3xl border bg-card p-8">
+                <div className="absolute inset-0 bg-linear-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10" />
+
+                <div className="relative">
+                    <h1 className="text-3xl font-semibold tracking-tight">
+                        {latestScore?.chapter_name ?? "Chapter Analytics"}
+                    </h1>
+                    <p className="mt-2 text-sm text-muted-foreground max-w-xl">
+                        Track your performance, manage deadlines, and improve strategically.
+                    </p>
+                </div>
             </div>
+
 
             {/* STATS */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Card>
+                <Card className="rounded-2xl shadow-sm">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-muted-foreground">
+                        <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
                             Score
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="text-4xl font-bold">
+                    <CardContent className="text-4xl font-semibold">
                         {score !== null ? `${score}%` : "—"}
                     </CardContent>
                 </Card>
 
+
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-muted-foreground">
+                        <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
                             Performance
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <Badge className={`${performanceColor} text-white capitalize`}>
+                        <Badge className={`capitalize px-3 py-1 ${performanceColor}`}>
                             {performanceLevel}
                         </Badge>
+
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-muted-foreground">
+                        <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
                             Days Left
                         </CardTitle>
                     </CardHeader>
@@ -238,7 +246,7 @@ export default function ChapterAnalyticsPage() {
 
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-muted-foreground">
+                        <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
                             Insight
                         </CardTitle>
                     </CardHeader>
@@ -254,71 +262,108 @@ export default function ChapterAnalyticsPage() {
                 </Card>
             </div>
 
+            {score !== null && !isEditing && (
+                <Button
+                    variant="outline"
+                    disabled={updateScoreMutation.isPending}
+                    onClick={() => {
+                        if (latestScore) {
+                            setNewScore(String(latestScore.score_percentage));
+                            setDeadline(latestScore.deadline.split("T")[0]);
+                        }
+                        setIsEditing(true);
+                    }}
+                >
+                    Edit Score & Deadline
+                </Button>
+
+            )}
             {/* ADD / UPDATE */}
             {(score === null || isEditing) && (
-                <Card>
+                <Card className="rounded-2xl border bg-card">
                     <CardHeader>
-                        <CardTitle>
-                            {score === null ? "Add Score & Deadline" : "Update Score & Deadline"}
+                        <CardTitle className="text-lg">
+                            {score === null ? "Add Score & Deadline" : "Update Progress"}
                         </CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Keep this chapter up to date for accurate insights.
+                        </p>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div>
-                            <Label>Score Percentage</Label>
+
+                    <CardContent className="grid gap-5">
+                        <div className="grid gap-2">
+                            <Label>Score (%)</Label>
                             <Input
                                 type="number"
-                                value={newScore ?? ""}
+                                placeholder="e.g. 65"
+                                value={newScore}
                                 onChange={(e) => setNewScore(e.target.value)}
                             />
                         </div>
 
-                        <div>
+                        <div className="grid gap-2">
                             <Label>Target Completion Date</Label>
                             <Input
                                 type="date"
-                                value={deadline ?? ""}
+                                value={deadline}
                                 onChange={(e) => setDeadline(e.target.value)}
                             />
                         </div>
 
                         <Button
-                            className="w-full"
+                            size="lg"
+                            className="mt-2"
                             disabled={
                                 addScoreMutation.isPending ||
                                 updateScoreMutation.isPending ||
                                 (score !== null && !hasChanges)
                             }
-                            onClick={() =>
-                                score === null
-                                    ? addScoreMutation.mutate()
-                                    : updateScoreMutation.mutate()
-                            }
+                            onClick={() => {
+                                if (score === null) {
+                                    addScoreMutation.mutate();
+                                } else {
+                                    updateScoreMutation.mutate();
+                                }
+                            }}
                         >
                             {updateScoreMutation.isPending
                                 ? "Updating..."
                                 : score === null
-                                    ? "Save"
-                                    : "Update"}
+                                    ? "Save Progress"
+                                    : "Update Progress"}
                         </Button>
 
                     </CardContent>
                 </Card>
+
             )}
 
-            {score !== null && !isEditing && (
-                <Button variant="outline" onClick={() => setIsEditing(true)}>
-                    Edit Score & Deadline
-                </Button>
-            )}
+
 
             {/* ANALYTICS */}
             <div className="grid gap-6 lg:grid-cols-2">
-                <Card>
+                <Card className="rounded-2xl">
                     <CardHeader>
                         <CardTitle>Performance Meter</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Visual representation of your current mastery
+                        </p>
                     </CardHeader>
-                    <CardContent>
-                        <Progress value={score ?? 0} />
+
+                    <CardContent className="flex flex-col justify-center h-full space-y-6">
+                        <div className="relative">
+                            {/* Gradient bar */}
+                            <div className="h-3 rounded-full bg-linear-to-r from-red-500 via-yellow-400 to-green-500" />
+
+                            {/* Marker */}
+                            <div
+                                className="absolute -top-2"
+                                style={{ left: `${score ?? 0}%` }}
+                            >
+                                <div className="w-4 h-4 rounded-full bg-background border shadow" />
+                            </div>
+                        </div>
+
                         <div className="flex justify-between text-xs text-muted-foreground">
                             <span>Weak</span>
                             <span>Average</span>
@@ -327,23 +372,47 @@ export default function ChapterAnalyticsPage() {
                     </CardContent>
                 </Card>
 
+
+
+
                 <Card className="relative rounded-2xl">
                     <CardHeader>
-                        <CardTitle>Deadline Analysis</CardTitle>
+                        <CardTitle>Deadline Timeline</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Remaining time until your target date
+                        </p>
                     </CardHeader>
-                    <CardContent className="h-65 relative">
+
+                    <CardContent className="h-72 relative">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
-                                <Pie data={pieData} dataKey="value" innerRadius={70} outerRadius={100} > {pieData.map((_, index) => (<Cell key={index} fill={COLORS[index % COLORS.length]} />))} </Pie>
+                                <Pie
+                                    data={pieData}
+                                    dataKey="value"
+                                    innerRadius={70}
+                                    outerRadius={100}
+                                    stroke="none"
+                                >
+                                    {pieData.map((_, index) => (
+                                        <Cell
+                                            key={index}
+                                            fill={COLORS[index % COLORS.length]}
+                                        />
+                                    ))}
+                                </Pie>
                                 <Tooltip />
                             </PieChart>
                         </ResponsiveContainer>
+
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span className="text-3xl font-bold">{daysLeft}</span>
-                            <span className="text-xs text-muted-foreground"> days left </span>
+                            <span className="text-4xl font-semibold">{daysLeft}</span>
+                            <span className="text-xs text-muted-foreground">
+                                days remaining
+                            </span>
                         </div>
                     </CardContent>
                 </Card>
+
             </div>
         </div>
     );

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User, LogOut, Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { ModeToggle } from "@/components/layout/mode-toggle";
 
 export default function Navbar({
     onMenuClick,
@@ -40,27 +41,35 @@ export default function Navbar({
             </div>
 
             {/* Right actions */}
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <User className="h-5 w-5" />
-                    </Button>
-                </DropdownMenuTrigger>
+            <div className="flex items-center gap-2">
+                {/* 🌙 Dark mode toggle */}
+                <ModeToggle />
 
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => router.push("/dashboard/profile")}>
-                        Profile
-                    </DropdownMenuItem>
+                {/* 👤 User menu */}
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <User className="h-5 w-5" />
+                        </Button>
+                    </DropdownMenuTrigger>
 
-                    <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={handleLogout}
-                    >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Logout
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                            onClick={() => router.push("/dashboard/profile")}
+                        >
+                            Profile
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={handleLogout}
+                        >
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Logout
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         </header>
     );
 }
