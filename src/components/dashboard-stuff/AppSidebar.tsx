@@ -51,13 +51,15 @@ export default function AppSidebar({ open = false, onClose }: SidebarProps) {
                         <X size={20} />
                     </button>
                 </div>
-                <div className="flex flex-col justify-center items-center p-1.25 border-b">
-                    <span className="text-lg font-bold tracking-tight">
-                        PadhAI
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                        Smart Learning Tracker
-                    </span>
+                <div className="flex flex-col justify-center items-center p-2">
+                    <Link href='/' className="flex flex-col justify-center items-center">
+                        <span className="text-lg font-bold tracking-tight">
+                            PadhAI
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                            Smart Learning Tracker
+                        </span>
+                    </Link>
                 </div>
 
                 <nav className="p-4 space-y-2">

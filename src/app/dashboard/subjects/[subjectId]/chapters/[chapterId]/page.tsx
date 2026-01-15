@@ -152,7 +152,13 @@ export default function ChapterAnalyticsPage() {
 
 
     if (isLoading) {
-        return <div className="p-6">Loading analytics...</div>;
+        return (
+            <div className="flex h-[60vh] items-center justify-center">
+                <p className="text-sm text-muted-foreground animate-pulse">
+                    Loading Analytics....
+                </p>
+            </div>
+        );
     }
 
     const score = latestScore?.score_percentage ?? null;

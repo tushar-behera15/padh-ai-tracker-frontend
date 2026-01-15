@@ -1,7 +1,12 @@
 'use client';
 
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import {
+    useMutation,
+    useQuery,
+    useQueryClient,
+} from "@tanstack/react-query";
+
 import { Calendar } from "@/components/ui/calendar";
 import {
     Card,
@@ -10,7 +15,18 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+/* ---------------- TYPES ---------------- */
 
 interface Revision {
     id: string;
@@ -38,6 +54,18 @@ async function fetchRevisions(): Promise<RevisionResponse> {
 
 /* ---------------- HELPERS ---------------- */
 
+// Always use LOCAL date key (never toISOString)
+function toDateKey(date: Date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+
+    return [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, "0"),
+        String(d.getDate()).padStart(2, "0"),
+    ].join("-");
+}
+
 function normalizeDate(date: Date) {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
@@ -59,11 +87,47 @@ export default function RevisionCalendarPage() {
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(
         new Date()
     );
+    const [open, setOpen] = useState(false);
+    const [activeRevision, setActiveRevision] =
+        useState<Revision | null>(null);
+
+    const queryClient = useQueryClient();
+
+    /* -------- Fetch revisions -------- */
 
     const { data, isLoading } = useQuery<RevisionResponse>({
         queryKey: ["revisions"],
         queryFn: fetchRevisions,
         staleTime: 1000 * 60 * 5,
+    });
+
+    /* -------- Mark completed -------- */
+
+    const markCompletedMutation = useMutation({
+        mutationFn: async (revisionId: string) => {
+            const res = await fetch(
+                `http://localhost:5000/api/revision/${revisionId}/completed`,
+                {
+                    method: "PUT",
+                    credentials: "include",
+                }
+            );
+
+            if (!res.ok) {
+                throw new Error("Failed to mark revision as completed");
+            }
+
+            return res.json();
+        },
+        onSuccess: () => {
+            toast.success("Revision marked as completed ✅");
+            queryClient.invalidateQueries({ queryKey: ["revisions"] });
+            setOpen(false);
+            setActiveRevision(null);
+        },
+        onError: () => {
+            toast.error("Failed to update revision");
+        },
     });
 
     /* -------- Group revisions by date -------- */
@@ -72,10 +136,7 @@ export default function RevisionCalendarPage() {
         const map: Record<string, Revision[]> = {};
 
         data?.revisions.forEach((rev) => {
-            const key = new Date(rev.revision_date)
-                .toISOString()
-                .split("T")[0];
-
+            const key = toDateKey(new Date(rev.revision_date));
             if (!map[key]) map[key] = [];
             map[key].push(rev);
         });
@@ -88,19 +149,22 @@ export default function RevisionCalendarPage() {
     /* -------- Calendar rules -------- */
 
     function isPastDateWithoutRevision(date: Date) {
-        const key = date.toISOString().split("T")[0];
+        const key = toDateKey(date);
         const hasRevision = !!revisionsByDate[key];
         return normalizeDate(date) < today && !hasRevision;
     }
 
-    const selectedKey = selectedDate
-        ? selectedDate.toISOString().split("T")[0]
-        : "";
-
+    const selectedKey = selectedDate ? toDateKey(selectedDate) : "";
     const selectedRevisions = revisionsByDate[selectedKey] || [];
 
     if (isLoading) {
-        return <div className="p-6">Loading revision calendar...</div>;
+        return (
+            <div className="flex h-[60vh] items-center justify-center">
+                <p className="text-sm text-muted-foreground animate-pulse">
+                    Loading your Revisions....
+                </p>
+            </div>
+        );
     }
 
     return (
@@ -137,13 +201,11 @@ export default function RevisionCalendarPage() {
                             disabled={isPastDateWithoutRevision}
                             className="rounded-md border"
                             modifiers={{
-                                hasRevision: (date) => {
-                                    const key = date.toISOString().split("T")[0];
-                                    return !!revisionsByDate[key];
-                                },
+                                hasRevision: (date) =>
+                                    !!revisionsByDate[toDateKey(date)],
                                 missed: (date) => {
-                                    const key = date.toISOString().split("T")[0];
-                                    const revisions = revisionsByDate[key];
+                                    const revisions =
+                                        revisionsByDate[toDateKey(date)];
                                     if (!revisions) return false;
 
                                     return revisions.some(
@@ -182,8 +244,6 @@ export default function RevisionCalendarPage() {
                         </p>
                     </CardHeader>
 
-
-
                     <CardContent className="space-y-4">
                         {selectedRevisions.length === 0 ? (
                             <div className="text-center py-10">
@@ -198,10 +258,17 @@ export default function RevisionCalendarPage() {
                                 return (
                                     <div
                                         key={rev.id}
+                                        onClick={() => {
+                                            if (status === "completed") return;
+                                            setActiveRevision(rev);
+                                            setOpen(true);
+                                        }}
                                         className={cn(
-                                            "rounded-xl border p-4 transition hover:shadow-sm",
+                                            "rounded-xl border p-4 transition",
+                                            status !== "completed" &&
+                                            "cursor-pointer hover:shadow-md hover:border-primary/40",
                                             status === "completed" &&
-                                            "bg-green-500/5 border-green-500/20",
+                                            "opacity-70 cursor-not-allowed bg-green-500/5 border-green-500/20",
                                             status === "pending" &&
                                             "bg-background",
                                             status === "missed" &&
@@ -233,13 +300,65 @@ export default function RevisionCalendarPage() {
                                             </Badge>
                                         </div>
                                     </div>
-
                                 );
                             })
                         )}
                     </CardContent>
                 </Card>
             </div>
+
+            {/* DIALOG (ONLY ONCE) */}
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Update Revision</DialogTitle>
+                    </DialogHeader>
+
+                    {activeRevision && (
+                        <div className="space-y-4">
+                            <div className="rounded-lg border p-3">
+                                <h3 className="font-medium">
+                                    {activeRevision.chapter_name}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                    {activeRevision.subject_name}
+                                </p>
+                            </div>
+
+                            <p className="text-sm text-muted-foreground">
+                                Mark this revision as completed?
+                            </p>
+
+                            <div className="flex justify-end gap-3">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setOpen(false)}
+                                >
+                                    Cancel
+                                </Button>
+
+                                <Button
+                                    disabled={
+                                        activeRevision.completed ||
+                                        markCompletedMutation.isPending
+                                    }
+                                    onClick={() =>
+                                        markCompletedMutation.mutate(
+                                            activeRevision.id
+                                        )
+                                    }
+                                >
+                                    {markCompletedMutation.isPending
+                                        ? "Updating..."
+                                        : activeRevision.completed
+                                            ? "Already Completed"
+                                            : "Mark as Completed"}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -1,8 +1,9 @@
+import HomeHero from '@/components/home/Homepage'
 
-const page = () => {
+const HomePage = () => {
   return (
-    <div>Home</div>
+    <HomeHero />
   )
 }
 
-export default page
+export default HomePage
