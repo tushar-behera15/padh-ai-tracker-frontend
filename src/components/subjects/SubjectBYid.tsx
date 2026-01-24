@@ -1,10 +1,24 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useQuery, useQueries } from "@tanstack/react-query";
+import { useParams, useRouter } from "next/navigation";
+import { useQuery, useQueries, useMutation, useQueryClient } from "@tanstack/react-query";
 import SubjectScorePie from "@/components/charts/SubjectCharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { Button } from "../ui/button";
+import { toast } from "sonner";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 
 interface Chapter {
     id: string;
@@ -42,10 +56,35 @@ async function fetchChapterScore(subjectId: string, chapterId: string) {
     return res.json();
 }
 
+async function deleteSubject(subjectId: string) {
+    const res = await fetch(`http://localhost:5000/api/subject/${subjectId}`,
+        { credentials: "include", method: "DELETE" }
+    );
+    if (!res.ok) throw new Error("Failed to delete the subject");
+    return res.json();
+}
+
 /* ---------------- PAGE ---------------- */
 
 export default function SubjectDetailPage() {
     const { subjectId } = useParams<{ subjectId: string }>();
+    const queryClient = useQueryClient();
+    const router = useRouter();
+
+    const deleteSubjectMutation = useMutation({
+        mutationFn: (subjectId: string) => deleteSubject(subjectId),
+
+        onSuccess: () => {
+            toast.success("Subject deleted successfully");
+            queryClient.invalidateQueries({ queryKey: ["subjects"] });
+            router.push("/dashboard/subjects");
+        },
+
+        onError: () => {
+            toast.error("Failed to delete subject");
+        },
+    });
+
 
     const {
         data: chaptersData,
@@ -110,16 +149,54 @@ export default function SubjectDetailPage() {
 
     const summary = scoreData?.summary;
 
+
+
     /* ---------------- UI ---------------- */
 
     return (
-        <div className="mx-auto max-w-7xl space-y-6 px-4 pb-8">
+        <div className="mx-auto max-w-7xl space-y-6 px-4 mt-3">
             {/* 📊 Subject Analytics */}
             <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-3 flex items-center justify-between">
                     <CardTitle className="text-lg sm:text-xl">
                         Subject analytics
                     </CardTitle>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive">
+                                Delete
+                            </Button>
+                        </AlertDialogTrigger>
+
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                    Delete this subject?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone.
+                                    All chapters and scores under this subject will be permanently deleted.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>
+                                    Cancel
+                                </AlertDialogCancel>
+
+                                <AlertDialogAction
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    onClick={() => {
+                                        deleteSubjectMutation.mutate(subjectId);
+                                    }}
+                                    disabled={deleteSubjectMutation.isPending}
+                                >
+                                    {deleteSubjectMutation.isPending ? "Deleting..." : "Delete"}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+
                 </CardHeader>
 
                 <CardContent className="grid gap-6 sm:grid-cols-2">
