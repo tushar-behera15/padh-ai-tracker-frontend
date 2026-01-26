@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import Breadcrumbs from "./Breadcrumbs";
@@ -11,6 +12,8 @@ import {
 import { User, LogOut, Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ModeToggle } from "@/components/layout/mode-toggle";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export default function Navbar({
     onMenuClick,
@@ -19,10 +22,19 @@ export default function Navbar({
 }) {
     const router = useRouter();
 
-    const handleLogout = async () => {
-        router.push("/login");
-    };
-
+    async function handlelogout() {
+        try {
+            const res = await fetch(
+                `http://localhost:5000/api/auth/logout`,
+                { credentials: "include" }
+            );
+            if (!res.ok) throw new Error("Failed to Logout...");
+            toast.success("User Logout successfully");
+            router.push("/");
+        } catch (err) {
+            toast.error("Failed to logout");
+        }
+    }
     return (
         <header className="flex h-14 items-center justify-between border-b px-3 sm:px-6 bg-background">
 
@@ -62,7 +74,7 @@ export default function Navbar({
 
                         <DropdownMenuItem
                             className="text-red-600"
-                            onClick={handleLogout}
+                            onClick={handlelogout}
                         >
                             <LogOut className="mr-2 h-4 w-4" />
                             Logout
