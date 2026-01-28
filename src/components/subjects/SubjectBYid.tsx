@@ -31,7 +31,7 @@ type PerformanceLevel = "weak" | "average" | "strong" | "null";
 
 async function fetchChapters(subjectId: string) {
     const res = await fetch(
-        `http://localhost:5000/api/subject/${subjectId}/chapters`,
+        `/api/subject/${subjectId}/chapters`,
         { credentials: "include" }
     );
     if (!res.ok) throw new Error("Failed to fetch chapters");
@@ -40,7 +40,7 @@ async function fetchChapters(subjectId: string) {
 
 async function fetchSubjectScore(subjectId: string) {
     const res = await fetch(
-        `http://localhost:5000/api/subject/${subjectId}/scores`,
+        `/api/subject/${subjectId}/scores`,
         { credentials: "include" }
     );
     if (!res.ok) throw new Error("Failed to fetch subject score summary");
@@ -49,7 +49,7 @@ async function fetchSubjectScore(subjectId: string) {
 
 async function fetchChapterScore(subjectId: string, chapterId: string) {
     const res = await fetch(
-        `http://localhost:5000/api/subject/${subjectId}/chapters/${chapterId}/scores`,
+        `/api/subject/${subjectId}/chapters/${chapterId}/scores`,
         { credentials: "include" }
     );
     if (!res.ok) throw new Error("Failed to fetch chapter score summary");
@@ -57,7 +57,7 @@ async function fetchChapterScore(subjectId: string, chapterId: string) {
 }
 
 async function deleteSubject(subjectId: string) {
-    const res = await fetch(`http://localhost:5000/api/subject/${subjectId}`,
+    const res = await fetch(`/api/subject/${subjectId}`,
         { credentials: "include", method: "DELETE" }
     );
     if (!res.ok) throw new Error("Failed to delete the subject");

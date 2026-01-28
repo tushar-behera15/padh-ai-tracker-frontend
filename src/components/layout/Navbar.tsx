@@ -13,7 +13,6 @@ import { User, LogOut, Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ModeToggle } from "@/components/layout/mode-toggle";
 import { toast } from "sonner";
-import { useState } from "react";
 
 export default function Navbar({
     onMenuClick,
@@ -25,7 +24,7 @@ export default function Navbar({
     async function handlelogout() {
         try {
             const res = await fetch(
-                `http://localhost:5000/api/auth/logout`,
+                `/api/auth/logout`,
                 { credentials: "include" }
             );
             if (!res.ok) throw new Error("Failed to Logout...");

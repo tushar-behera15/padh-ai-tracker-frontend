@@ -44,7 +44,7 @@ interface RevisionResponse {
 /* ---------------- API ---------------- */
 
 async function fetchRevisions(): Promise<RevisionResponse> {
-    const res = await fetch("http://localhost:5000/api/revision", {
+    const res = await fetch("/api/revision", {
         credentials: "include",
     });
 
@@ -106,7 +106,7 @@ export default function RevisionCalendarPage() {
     const markCompletedMutation = useMutation({
         mutationFn: async (revisionId: string) => {
             const res = await fetch(
-                `http://localhost:5000/api/revision/${revisionId}/completed`,
+                `/api/revision/${revisionId}/completed`,
                 {
                     method: "PUT",
                     credentials: "include",

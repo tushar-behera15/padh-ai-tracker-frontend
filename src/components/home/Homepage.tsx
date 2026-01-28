@@ -5,7 +5,7 @@ import Carousel from "./Carousel";
 
 export default function HomeHero() {
     async function fetchMe() {
-        const res = await fetch("http://localhost:5000/api/auth/me", {
+        const res = await fetch(`/api/auth/me`, {
             credentials: "include",
         });
 
@@ -77,7 +77,7 @@ export default function HomeHero() {
                                 ) : (
                                     <>
                                         <Link href="/login">
-                                            <button className="rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition">
+                                            <button className="w-full rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition">
                                                 Get Started Free
                                             </button>
                                         </Link>

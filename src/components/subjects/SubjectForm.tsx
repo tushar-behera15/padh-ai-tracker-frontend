@@ -39,7 +39,7 @@ export default function AddSubjectDialog({ onSuccess }: AddSubjectDialogProps) {
         setLoading(true);
 
         try {
-            const res = await fetch("http://localhost:5000/api/subject/create", {
+            const res = await fetch("/api/subject/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",

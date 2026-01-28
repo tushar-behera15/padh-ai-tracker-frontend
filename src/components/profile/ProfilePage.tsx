@@ -17,7 +17,7 @@ import Link from "next/link";
 /* ---------------- API ---------------- */
 
 async function fetchMe() {
-    const res = await fetch("http://localhost:5000/api/auth/me", {
+    const res = await fetch("/api/auth/me", {
         credentials: "include",
     });
     if (!res.ok) throw new Error("Not authenticated");
@@ -25,7 +25,7 @@ async function fetchMe() {
 }
 
 async function fetchRevisions() {
-    const res = await fetch("http://localhost:5000/api/revision", {
+    const res = await fetch("/api/revision", {
         credentials: "include",
     });
     if (!res.ok) throw new Error("Failed to fetch revisions");
