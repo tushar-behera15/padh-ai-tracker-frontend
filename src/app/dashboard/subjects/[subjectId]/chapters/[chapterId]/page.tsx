@@ -45,7 +45,7 @@ async function fetchChapterScore(
     chapterId: string
 ): Promise<ScoreResponse> {
     const res = await fetch(
-        `http://localhost:5000/api/subject/${subjectId}/chapters/${chapterId}/scores`,
+        `/api/subject/${subjectId}/chapters/${chapterId}/scores`,
         { credentials: "include" }
     );
 
@@ -88,7 +88,7 @@ export default function ChapterAnalyticsPage() {
     const addScoreMutation = useMutation({
         mutationFn: async () => {
             const res = await fetch(
-                `http://localhost:5000/api/subject/${subjectId}/chapters/${chapterId}/scores`,
+                `/api/subject/${subjectId}/chapters/${chapterId}/scores`,
                 {
                     method: "POST",
                     credentials: "include",
@@ -129,7 +129,7 @@ export default function ChapterAnalyticsPage() {
             };
 
             const res = await fetch(
-                `http://localhost:5000/api/subject/${subjectId}/chapters/${chapterId}/scores/${latestScore.id}`,
+                `/subject/${subjectId}/chapters/${chapterId}/scores/${latestScore.id}`,
                 {
                     method: "PUT",
                     credentials: "include",

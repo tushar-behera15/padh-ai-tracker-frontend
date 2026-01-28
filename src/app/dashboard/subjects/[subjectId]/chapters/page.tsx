@@ -40,7 +40,7 @@ type ChapterScore = {
 
 async function fetchChapters(subjectId: string) {
     const res = await fetch(
-        `http://localhost:5000/api/subject/${subjectId}/chapters`,
+        `/api/subject/${subjectId}/chapters`,
         { credentials: "include" }
     );
     if (!res.ok) throw new Error("Failed to fetch chapters");
@@ -49,7 +49,7 @@ async function fetchChapters(subjectId: string) {
 
 async function fetchChapterScore(subjectId: string, chapterId: string) {
     const res = await fetch(
-        `http://localhost:5000/api/subject/${subjectId}/chapters/${chapterId}/scores`,
+        `/api/subject/${subjectId}/chapters/${chapterId}/scores`,
         { credentials: "include" }
     );
     if (!res.ok) throw new Error("Failed to fetch chapter score");
@@ -58,7 +58,7 @@ async function fetchChapterScore(subjectId: string, chapterId: string) {
 
 async function createChapter(subjectId: string, name: string) {
     const res = await fetch(
-        `http://localhost:5000/api/subject/${subjectId}/chapters`,
+        `/api/subject/${subjectId}/chapters`,
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },

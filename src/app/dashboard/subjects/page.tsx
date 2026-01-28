@@ -28,7 +28,7 @@ export default function SubjectsPage() {
     } = useQuery<Subject[]>({
         queryKey: ["subjects"],
         queryFn: async () => {
-            const res = await fetch("http://localhost:5000/api/subject", {
+            const res = await fetch("/api/subject", {
                 credentials: "include",
             });
 
@@ -50,7 +50,7 @@ export default function SubjectsPage() {
 
                     try {
                         const scoreRes = await fetch(
-                            `http://localhost:5000/api/subject/${subject.id}/scores`,
+                            `/api/subject/${subject.id}/scores`,
                             { credentials: "include" }
                         );
 
