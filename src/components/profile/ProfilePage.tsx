@@ -50,7 +50,8 @@ async function fetchSubjects() {
         credentials: "include",
     });
     if (!res.ok) throw new Error("Failed to fetch subjects");
-    return res.json();
+    const data = await res.json();
+    return data.subjects || [];
 }
 
 /* ---------------- HELPERS ---------------- */
@@ -76,8 +77,8 @@ export default function ProfilePage() {
         staleTime: 0
     });
 
-    const { data: subjectData, isLoading: subjectLoading } = useQuery({
-        queryKey: ["subjects"],
+    const { data: subjects = [], isLoading: subjectLoading } = useQuery({
+        queryKey: ["subjects", "raw"],
         queryFn: fetchSubjects,
         staleTime: 0
     });
@@ -140,8 +141,7 @@ export default function ProfilePage() {
     // We don't early return for isLoading anymore to prevent layout flickering.
     // Instead, we render the shells and use skeletons inside.
 
-    const subjects = subjectData?.subjects ?? [];
-    const totalChapters = subjects.reduce((acc: number, s: any) => acc + (s.chapterCount || 0), 0);
+    const totalChapters = subjects.reduce((acc: number, s: any) => acc + (Number(s.chapter_count) || 0), 0);
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 space-y-8 bg-background text-foreground lg:px-8 animate-in fade-in duration-700">

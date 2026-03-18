@@ -27,7 +27,7 @@ export default function SubjectsPage() {
         isLoading,
         isError,
     } = useQuery<Subject[]>({
-        queryKey: ["subjects"],
+        queryKey: ["subjects", "detailed"],
         queryFn: async () => {
             const res = await fetch("/api/subject", {
                 credentials: "include",
@@ -146,8 +146,22 @@ export default function SubjectsPage() {
                     <AddSubjectDialog
                         onSuccess={(newSubject) => {
                             queryClient.setQueryData<Subject[]>(
-                                ["subjects"],
-                                (old = []) => [newSubject, ...old]
+                                ["subjects", "detailed"],
+                                (old = []) => [
+                                    {
+                                        id: newSubject.id,
+                                        name: newSubject.name,
+                                        chapterCount: 0,
+                                        pendingRevisions: 0,
+                                        scoreSummary: {
+                                            weak: 0,
+                                            average: 0,
+                                            strong: 0,
+                                            average_percentage: 0,
+                                        },
+                                    },
+                                    ...old,
+                                ]
                             );
                         }}
                     />

@@ -25,11 +25,10 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { 
-    Calendar as CalendarIcon, 
-    CheckCircle2, 
-    Clock, 
-    AlertCircle, 
+import {
+    Calendar as CalendarIcon,
+    CheckCircle2,
+    AlertCircle,
     ChevronRight,
     Sparkles,
     BookOpen
@@ -160,7 +159,7 @@ export default function RevisionCalendarPage() {
     if (isLoading) {
         return (
             <div className="flex h-[60vh] items-center justify-center">
-                 <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col items-center gap-4">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                     <p className="text-sm text-muted-foreground animate-pulse font-medium">
                         Loading your schedule...
@@ -225,17 +224,17 @@ export default function RevisionCalendarPage() {
 
                     {/* LEGEND */}
                     <Card className="rounded-2xl border-border/40 bg-card/40 p-4 space-y-3">
-                         <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground uppercase tracking-widest px-2">Legend</div>
-                         <div className="grid grid-cols-2 gap-4">
-                             <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground uppercase tracking-widest px-2">Legend</div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex items-center gap-2 text-sm">
                                 <div className="h-2 w-2 rounded-full bg-primary" />
                                 <span>Revision Due</span>
-                             </div>
-                             <div className="flex items-center gap-2 text-sm">
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
                                 <div className="h-2 w-2 rounded-full bg-rose-500" />
                                 <span>Missed Day</span>
-                             </div>
-                         </div>
+                            </div>
+                        </div>
                     </Card>
                 </div>
 
@@ -243,16 +242,16 @@ export default function RevisionCalendarPage() {
                 <div className="space-y-6">
                     <div className="flex items-center justify-between px-2">
                         <div className="space-y-1">
-                             <h2 className="text-2xl font-bold tracking-tight">
+                            <h2 className="text-2xl font-bold tracking-tight">
                                 {selectedDate?.toLocaleDateString(undefined, {
                                     day: "numeric",
                                     month: "long",
                                     year: "numeric"
                                 })}
-                             </h2>
-                             <p className="text-sm text-muted-foreground">
+                            </h2>
+                            <p className="text-sm text-muted-foreground">
                                 {selectedRevisions.length} {selectedRevisions.length === 1 ? 'task' : 'tasks'} scheduled
-                             </p>
+                            </p>
                         </div>
                     </div>
 
@@ -288,8 +287,8 @@ export default function RevisionCalendarPage() {
                                                 <div className={cn(
                                                     "p-3 rounded-2xl",
                                                     status === "completed" ? "bg-emerald-500/10 text-emerald-500" :
-                                                    status === "missed" ? "bg-rose-500/10 text-rose-500" :
-                                                    "bg-primary/10 text-primary"
+                                                        status === "missed" ? "bg-rose-500/10 text-rose-500" :
+                                                            "bg-primary/10 text-primary"
                                                 )}>
                                                     <BookOpen className="h-6 w-6" />
                                                 </div>
@@ -303,8 +302,8 @@ export default function RevisionCalendarPage() {
                                                 <Badge className={cn(
                                                     "rounded-full px-4 py-1 text-xs font-bold",
                                                     status === "completed" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" :
-                                                    status === "missed" ? "bg-rose-500/20 text-rose-600 dark:text-rose-400" :
-                                                    "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                                                        status === "missed" ? "bg-rose-500/20 text-rose-600 dark:text-rose-400" :
+                                                            "bg-amber-500/20 text-amber-600 dark:text-amber-400"
                                                 )}>
                                                     {status === "completed" && <CheckCircle2 className="h-3 w-3 mr-1 inline" />}
                                                     {status === "missed" && <AlertCircle className="h-3 w-3 mr-1 inline" />}
@@ -341,9 +340,9 @@ export default function RevisionCalendarPage() {
                             </p>
 
                             <DialogFooter className="gap-3 sm:justify-between">
-                                <Button 
-                                    variant="ghost" 
-                                    onClick={() => setOpen(false)} 
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setOpen(false)}
                                     className="rounded-full px-8"
                                 >
                                     Not Yet

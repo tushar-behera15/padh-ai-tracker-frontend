@@ -83,9 +83,9 @@ export default function SubjectCard({
 
                     {/* Stats Breakdown */}
                     <div className="grid grid-cols-3 gap-2 overflow-hidden rounded-2xl border border-border/40 bg-background/40 p-1">
-                        <StatItem label="Weak" value={scoreSummary.weak} color="rose" />
-                        <StatItem label="Avg" value={scoreSummary.average} color="amber" />
-                        <StatItem label="Strong" value={scoreSummary.strong} color="emerald" />
+                        <StatItem label="Weak" value={scoreSummary?.weak ?? 0} color="rose" />
+                        <StatItem label="Avg" value={scoreSummary?.average ?? 0} color="amber" />
+                        <StatItem label="Strong" value={scoreSummary?.strong ?? 0} color="emerald" />
                     </div>
 
                     {/* Action Indicator */}

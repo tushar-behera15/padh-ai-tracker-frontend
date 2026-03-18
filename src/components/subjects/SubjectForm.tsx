@@ -29,7 +29,7 @@ export default function AddSubjectDialog({ onSuccess }: SubjectFormProps) {
 
     const mutation = useMutation({
         mutationFn: async (name: string) => {
-            const res = await fetch("/api/subject", {
+            const res = await fetch("/api/subject/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -48,7 +48,8 @@ export default function AddSubjectDialog({ onSuccess }: SubjectFormProps) {
             onSuccess(data.subject);
             setOpen(false);
             setName("");
-            queryClient.invalidateQueries({ queryKey: ["subjects"] });
+            queryClient.invalidateQueries({ queryKey: ["subjects", "detailed"] });
+            queryClient.invalidateQueries({ queryKey: ["subjects", "raw"] });
         },
         onError: (error: any) => {
             toast.error(error.message);

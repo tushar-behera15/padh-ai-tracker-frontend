@@ -129,7 +129,7 @@ export default function ChapterAnalyticsPage() {
             };
 
             const res = await fetch(
-                `/subject/${subjectId}/chapters/${chapterId}/scores/${latestScore.id}`,
+                `/api/subject/${subjectId}/chapters/${chapterId}/scores/${latestScore.id}`,
                 {
                     method: "PUT",
                     credentials: "include",
