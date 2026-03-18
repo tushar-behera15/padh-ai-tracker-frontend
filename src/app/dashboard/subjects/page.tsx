@@ -4,6 +4,7 @@
 import SubjectCard from "@/components/subjects/SubjectCard";
 import AddSubjectDialog from "@/components/subjects/SubjectForm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { BookOpen } from "lucide-react";
 
 export interface Subject {
     id: string;
@@ -87,9 +88,12 @@ export default function SubjectsPage() {
     if (isLoading) {
         return (
             <div className="flex h-[60vh] items-center justify-center">
-                <p className="text-sm text-muted-foreground animate-pulse">
-                    Loading your subjects…
-                </p>
+                 <div className="flex flex-col items-center gap-4">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                    <p className="text-sm text-muted-foreground animate-pulse font-medium">
+                        Syncing your academic subjects...
+                    </p>
+                </div>
             </div>
         );
     }
@@ -97,9 +101,12 @@ export default function SubjectsPage() {
     if (isError) {
         return (
             <div className="flex h-[60vh] items-center justify-center">
-                <p className="text-sm font-medium text-red-500 dark:text-red-400">
-                    Failed to load subjects
-                </p>
+                <div className="flex flex-col items-center gap-2 p-8 rounded-3xl border border-rose-500/20 bg-rose-500/5">
+                    <p className="text-sm font-bold text-rose-500 uppercase tracking-widest">
+                        Data Sync Failed
+                    </p>
+                    <p className="text-muted-foreground text-xs">Please check your connection or try again later.</p>
+                </div>
             </div>
         );
     }
@@ -107,25 +114,35 @@ export default function SubjectsPage() {
     /* -------------------- UI -------------------- */
 
     return (
-        <div className="mx-auto max-w-7xl space-y-8 px-4 py-6">
-            {/* Header */}
-            <div className="space-y-1">
-                <h1 className="text-2xl font-semibold tracking-tight">
-                    Subjects
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                    Track chapters, revisions, and performance at a glance
-                </p>
+        <div className="mx-auto max-w-7xl px-4 py-8 space-y-8 bg-background text-foreground lg:px-8">
+            
+            {/* HERO SECTION */}
+            <div className="relative overflow-hidden rounded-[2.5rem] border bg-card p-1">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-transparent to-primary/10" />
+                <div className="relative rounded-[2.4rem] bg-card/50 backdrop-blur-xl p-8 md:p-12 lg:flex lg:items-center lg:justify-between">
+                    <div className="max-w-2xl space-y-4">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary">
+                            <BookOpen className="h-4 w-4" />
+                            Subject Repository
+                        </div>
+                        <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
+                            Knowledge <span className="text-primary tracking-tighter">Stack</span>
+                        </h1>
+                        <p className="text-lg text-muted-foreground">
+                            Manage your academic disciplines. Add new subjects to start generating AI-powered revision strategies.
+                        </p>
+                    </div>
+                </div>
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
                 {subjects.map((subject) => (
                     <SubjectCard key={subject.id} {...subject} />
                 ))}
 
                 {/* Add Subject Card */}
-                <div className="flex">
+                <div className="flex min-h-[300px]">
                     <AddSubjectDialog
                         onSuccess={(newSubject) => {
                             queryClient.setQueryData<Subject[]>(
@@ -136,6 +153,18 @@ export default function SubjectsPage() {
                     />
                 </div>
             </div>
+
+            {subjects.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-2 border-dashed border-border/60 rounded-[3rem]">
+                    <div className="p-6 rounded-full bg-muted/50 text-muted-foreground">
+                        <BookOpen className="h-12 w-12" />
+                    </div>
+                    <div>
+                         <h3 className="text-xl font-bold">No subjects yet</h3>
+                         <p className="text-muted-foreground">Add your first subject to begin your study journey.</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

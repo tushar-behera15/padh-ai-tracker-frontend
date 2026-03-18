@@ -13,6 +13,7 @@ import {
     CardContent,
     CardHeader,
     CardTitle,
+    CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,8 +21,19 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
+    DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { 
+    Calendar as CalendarIcon, 
+    CheckCircle2, 
+    Clock, 
+    AlertCircle, 
+    ChevronRight,
+    Sparkles,
+    BookOpen
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -54,7 +66,6 @@ async function fetchRevisions(): Promise<RevisionResponse> {
 
 /* ---------------- HELPERS ---------------- */
 
-// Always use LOCAL date key (never toISOString)
 function toDateKey(date: Date) {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
@@ -93,15 +104,11 @@ export default function RevisionCalendarPage() {
 
     const queryClient = useQueryClient();
 
-    /* -------- Fetch revisions -------- */
-
     const { data, isLoading } = useQuery<RevisionResponse>({
         queryKey: ["revisions"],
         queryFn: fetchRevisions,
         staleTime: 1000 * 60 * 5,
     });
-
-    /* -------- Mark completed -------- */
 
     const markCompletedMutation = useMutation({
         mutationFn: async (revisionId: string) => {
@@ -113,14 +120,13 @@ export default function RevisionCalendarPage() {
                 }
             );
 
-            if (!res.ok) {
-                throw new Error("Failed to mark revision as completed");
-            }
-
+            if (!res.ok) throw new Error("Failed to mark revision as completed");
             return res.json();
         },
         onSuccess: () => {
-            toast.success("Revision marked as completed ✅");
+            toast.success("Revision completed!", {
+                icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+            });
             queryClient.invalidateQueries({ queryKey: ["revisions"] });
             setOpen(false);
             setActiveRevision(null);
@@ -130,23 +136,17 @@ export default function RevisionCalendarPage() {
         },
     });
 
-    /* -------- Group revisions by date -------- */
-
     const revisionsByDate = useMemo(() => {
         const map: Record<string, Revision[]> = {};
-
         data?.revisions.forEach((rev) => {
             const key = toDateKey(new Date(rev.revision_date));
             if (!map[key]) map[key] = [];
             map[key].push(rev);
         });
-
         return map;
     }, [data]);
 
     const today = normalizeDate(new Date());
-
-    /* -------- Calendar rules -------- */
 
     function isPastDateWithoutRevision(date: Date) {
         const key = toDateKey(date);
@@ -160,103 +160,117 @@ export default function RevisionCalendarPage() {
     if (isLoading) {
         return (
             <div className="flex h-[60vh] items-center justify-center">
-                <p className="text-sm text-muted-foreground animate-pulse">
-                    Loading your Revisions....
-                </p>
+                 <div className="flex flex-col items-center gap-4">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                    <p className="text-sm text-muted-foreground animate-pulse font-medium">
+                        Loading your schedule...
+                    </p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="mx-auto max-w-7xl px-6 py-8 space-y-10 bg-background text-foreground">
+        <div className="mx-auto max-w-7xl px-4 py-8 space-y-8 bg-background text-foreground lg:px-8">
 
-            {/* HERO */}
-            <div className="relative overflow-hidden rounded-3xl border bg-card p-8">
-                <div className="absolute inset-0 bg-linear-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10" />
-
-                <div className="relative">
-                    <h1 className="text-3xl font-semibold tracking-tight">
-                        Revision Calendar
-                    </h1>
-                    <p className="mt-2 text-sm text-muted-foreground max-w-xl">
-                        Visual overview of completed, pending, and missed study revisions.
-                    </p>
+            {/* HERO SECTION */}
+            <div className="relative overflow-hidden rounded-[2.5rem] border bg-card p-1">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-transparent to-primary/10" />
+                <div className="relative rounded-[2.4rem] bg-card/50 backdrop-blur-xl p-8 md:p-12">
+                    <div className="max-w-2xl space-y-4">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary">
+                            <CalendarIcon className="h-4 w-4" />
+                            Active Planner
+                        </div>
+                        <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
+                            Revision <span className="text-primary tracking-tighter">Timeline</span>
+                        </h1>
+                        <p className="text-lg text-muted-foreground">
+                            Visualise your study journey. Complete pending tasks to maintain your academic momentum.
+                        </p>
+                    </div>
                 </div>
             </div>
 
+            <div className="grid gap-8 lg:grid-cols-[400px_1fr]">
+                {/* CALENDAR COLUMN */}
+                <div className="space-y-6">
+                    <Card className="rounded-3xl border-border/40 bg-card/60 shadow-xl backdrop-blur-md">
+                        <CardHeader>
+                            <CardTitle className="text-lg">Select Date</CardTitle>
+                            <CardDescription>View scheduled chapters</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex justify-center pb-8 p-3">
+                            <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={setSelectedDate}
+                                disabled={isPastDateWithoutRevision}
+                                className="rounded-2xl border bg-background/40 p-3"
+                                modifiers={{
+                                    hasRevision: (date) => !!revisionsByDate[toDateKey(date)],
+                                    missed: (date) => {
+                                        const revisions = revisionsByDate[toDateKey(date)];
+                                        if (!revisions) return false;
+                                        return revisions.some(r => !r.completed && normalizeDate(new Date(r.revision_date)) < today);
+                                    },
+                                }}
+                                modifiersClassNames={{
+                                    hasRevision: "relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1.5 after:w-1.5 after:rounded-full after:bg-primary",
+                                    missed: "bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold underline decoration-rose-500/30",
+                                }}
+                            />
+                        </CardContent>
+                    </Card>
 
-            <div className="grid gap-8 lg:grid-cols-[420px_1fr] items-start">
+                    {/* LEGEND */}
+                    <Card className="rounded-2xl border-border/40 bg-card/40 p-4 space-y-3">
+                         <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground uppercase tracking-widest px-2">Legend</div>
+                         <div className="grid grid-cols-2 gap-4">
+                             <div className="flex items-center gap-2 text-sm">
+                                <div className="h-2 w-2 rounded-full bg-primary" />
+                                <span>Revision Due</span>
+                             </div>
+                             <div className="flex items-center gap-2 text-sm">
+                                <div className="h-2 w-2 rounded-full bg-rose-500" />
+                                <span>Missed Day</span>
+                             </div>
+                         </div>
+                    </Card>
+                </div>
 
-                {/* CALENDAR */}
-                <Card className="rounded-2xl">
-                    <CardHeader>
-                        <CardTitle>Select Date</CardTitle>
-                    </CardHeader>
-
-                    <CardContent className="flex justify-center">
-                        <Calendar
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={setSelectedDate}
-                            disabled={isPastDateWithoutRevision}
-                            className="rounded-md border"
-                            modifiers={{
-                                hasRevision: (date) =>
-                                    !!revisionsByDate[toDateKey(date)],
-                                missed: (date) => {
-                                    const revisions =
-                                        revisionsByDate[toDateKey(date)];
-                                    if (!revisions) return false;
-
-                                    return revisions.some(
-                                        (r) =>
-                                            !r.completed &&
-                                            normalizeDate(
-                                                new Date(r.revision_date)
-                                            ) < today
-                                    );
-                                },
-                            }}
-                            modifiersClassNames={{
-                                hasRevision:
-                                    "relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1.5 after:w-1.5 after:rounded-full after:bg-primary",
-                                missed:
-                                    "bg-red-500/10 text-red-600 dark:text-red-400 font-medium",
-                            }}
-                        />
-                    </CardContent>
-                </Card>
-
-                {/* REVISION LIST */}
-                <Card className="rounded-2xl">
-                    <CardHeader>
-                        <CardTitle className="text-base">
-                            {selectedDate
-                                ? selectedDate.toLocaleDateString(undefined, {
-                                    weekday: "long",
+                {/* REVISION LIST COLUMN */}
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between px-2">
+                        <div className="space-y-1">
+                             <h2 className="text-2xl font-bold tracking-tight">
+                                {selectedDate?.toLocaleDateString(undefined, {
                                     day: "numeric",
                                     month: "long",
-                                })
-                                : "Select a date"}
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                            Scheduled revisions for the selected day
-                        </p>
-                    </CardHeader>
+                                    year: "numeric"
+                                })}
+                             </h2>
+                             <p className="text-sm text-muted-foreground">
+                                {selectedRevisions.length} {selectedRevisions.length === 1 ? 'task' : 'tasks'} scheduled
+                             </p>
+                        </div>
+                    </div>
 
-                    <CardContent className="space-y-4">
+                    <div className="grid gap-4">
                         {selectedRevisions.length === 0 ? (
-                            <div className="text-center py-10">
-                                <p className="text-sm text-muted-foreground">
-                                    No revisions scheduled for this day 📭
-                                </p>
-                            </div>
+                            <Card className="rounded-[2rem] border-dashed border-2 py-20 bg-card/20 border-border/60">
+                                <div className="text-center space-y-3">
+                                    <div className="mx-auto h-12 w-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
+                                        <Sparkles className="h-6 w-6" />
+                                    </div>
+                                    <p className="text-muted-foreground font-medium">Rest day! No revisions scheduled.</p>
+                                </div>
+                            </Card>
                         ) : (
                             selectedRevisions.map((rev) => {
                                 const status = getRevisionStatus(rev);
-
                                 return (
-                                    <div
+                                    <Card
                                         key={rev.id}
                                         onClick={() => {
                                             if (status === "completed") return;
@@ -264,97 +278,84 @@ export default function RevisionCalendarPage() {
                                             setOpen(true);
                                         }}
                                         className={cn(
-                                            "rounded-xl border p-4 transition",
-                                            status !== "completed" &&
-                                            "cursor-pointer hover:shadow-md hover:border-primary/40",
-                                            status === "completed" &&
-                                            "opacity-70 cursor-not-allowed bg-green-500/5 border-green-500/20",
-                                            status === "pending" &&
-                                            "bg-background",
-                                            status === "missed" &&
-                                            "bg-red-500/5 border-red-500/30"
+                                            "group relative overflow-hidden rounded-[1.5rem] p-6 transition-all border-border/40",
+                                            status !== "completed" ? "cursor-pointer hover:bg-muted/40 hover:shadow-lg hover:border-primary/50" : "opacity-80 bg-emerald-500/5",
+                                            status === "missed" && "bg-rose-500/5 border-rose-500/20"
                                         )}
                                     >
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="space-y-1">
-                                                <h3 className="font-medium">
-                                                    {rev.chapter_name}
-                                                </h3>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {rev.subject_name}
-                                                </p>
+                                        <div className="flex items-center justify-between gap-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className={cn(
+                                                    "p-3 rounded-2xl",
+                                                    status === "completed" ? "bg-emerald-500/10 text-emerald-500" :
+                                                    status === "missed" ? "bg-rose-500/10 text-rose-500" :
+                                                    "bg-primary/10 text-primary"
+                                                )}>
+                                                    <BookOpen className="h-6 w-6" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-bold text-lg group-hover:text-primary transition-colors">{rev.chapter_name}</h3>
+                                                    <p className="text-sm text-muted-foreground">{rev.subject_name}</p>
+                                                </div>
                                             </div>
 
-                                            <Badge
-                                                className={cn(
-                                                    "capitalize px-3 py-1 text-xs",
-                                                    status === "completed" &&
-                                                    "bg-green-500/15 text-green-600 dark:text-green-400",
-                                                    status === "pending" &&
-                                                    "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400",
-                                                    status === "missed" &&
-                                                    "bg-red-500/15 text-red-600 dark:text-red-400"
-                                                )}
-                                            >
-                                                {status}
-                                            </Badge>
+                                            <div className="flex items-center gap-3">
+                                                <Badge className={cn(
+                                                    "rounded-full px-4 py-1 text-xs font-bold",
+                                                    status === "completed" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" :
+                                                    status === "missed" ? "bg-rose-500/20 text-rose-600 dark:text-rose-400" :
+                                                    "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                                                )}>
+                                                    {status === "completed" && <CheckCircle2 className="h-3 w-3 mr-1 inline" />}
+                                                    {status === "missed" && <AlertCircle className="h-3 w-3 mr-1 inline" />}
+                                                    {status}
+                                                </Badge>
+                                                {status !== "completed" && <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />}
+                                            </div>
                                         </div>
-                                    </div>
+                                    </Card>
                                 );
                             })
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
-            {/* DIALOG (ONLY ONCE) */}
+            {/* COMPLETION DIALOG */}
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="rounded-[2rem] sm:max-w-md border-border/40 bg-card/80 backdrop-blur-2xl">
                     <DialogHeader>
-                        <DialogTitle>Update Revision</DialogTitle>
+                        <DialogTitle className="text-2xl font-bold">Complete Revision</DialogTitle>
+                        <DialogDescription>Verify you&apos;ve mastered the material for this chapter.</DialogDescription>
                     </DialogHeader>
 
                     {activeRevision && (
-                        <div className="space-y-4">
-                            <div className="rounded-lg border p-3">
-                                <h3 className="font-medium">
-                                    {activeRevision.chapter_name}
-                                </h3>
-                                <p className="text-sm text-muted-foreground">
-                                    {activeRevision.subject_name}
-                                </p>
+                        <div className="space-y-6 pt-4">
+                            <div className="rounded-2xl bg-muted p-4 border border-border/40 space-y-1">
+                                <h3 className="font-bold text-lg">{activeRevision.chapter_name}</h3>
+                                <p className="text-sm text-muted-foreground">{activeRevision.subject_name}</p>
                             </div>
 
-                            <p className="text-sm text-muted-foreground">
-                                Mark this revision as completed?
+                            <p className="text-sm text-center px-4 leading-relaxed italic">
+                                &quot;Success is the sum of small efforts, repeated day in and day out.&quot;
                             </p>
 
-                            <div className="flex justify-end gap-3">
-                                <Button
-                                    variant="ghost"
-                                    onClick={() => setOpen(false)}
+                            <DialogFooter className="gap-3 sm:justify-between">
+                                <Button 
+                                    variant="ghost" 
+                                    onClick={() => setOpen(false)} 
+                                    className="rounded-full px-8"
                                 >
-                                    Cancel
+                                    Not Yet
                                 </Button>
-
                                 <Button
-                                    disabled={
-                                        activeRevision.completed ||
-                                        markCompletedMutation.isPending
-                                    }
-                                    onClick={() =>
-                                        markCompletedMutation.mutate(
-                                            activeRevision.id
-                                        )
-                                    }
+                                    className="rounded-full px-8 font-bold"
+                                    disabled={markCompletedMutation.isPending}
+                                    onClick={() => markCompletedMutation.mutate(activeRevision.id)}
                                 >
-                                    {markCompletedMutation.isPending
-                                        ? "Updating..."
-                                        : activeRevision.completed
-                                            ? "Already Completed"
-                                            : "Mark as Completed"}
+                                    {markCompletedMutation.isPending ? "Updating..." : "Confirm Mastery"}
                                 </Button>
-                            </div>
+                            </DialogFooter>
                         </div>
                     )}
                 </DialogContent>
